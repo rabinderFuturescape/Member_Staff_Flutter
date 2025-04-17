@@ -50,38 +50,41 @@ class ApiService {
   /// Fetches all staff from the API.
   Future<List<Staff>> getStaff() async {
     try {
-      final response = await _client.get(Uri.parse('$baseUrl/staff'));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => Staff.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load staff: ${response.statusCode}');
-      }
+      final data = await _httpHelper.get('$baseUrl/staff');
+      final List<dynamic> staffList = data as List<dynamic>;
+      return staffList.map((json) => Staff.fromJson(json)).toList();
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to load staff: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
     } catch (e) {
-      throw Exception('Failed to load staff: $e');
+      throw ApiException(message: 'Failed to load staff: $e');
     }
   }
 
   /// Fetches staff by scope (society or member).
   Future<List<Staff>> getStaffByScope(StaffScope scope) async {
     try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/staff?staff_scope=${scope.name}'),
-      );
+      final data = await _httpHelper.get('$baseUrl/staff?staff_scope=${scope.name}');
+      final List<dynamic> staffList = data as List<dynamic>;
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        if (scope == StaffScope.society) {
-          return data.map((json) => SocietyStaff.fromJson(json)).toList();
-        } else {
-          return data.map((json) => MemberStaff.fromJson(json)).toList();
-        }
+      if (scope == StaffScope.society) {
+        return staffList.map((json) => SocietyStaff.fromJson(json)).toList();
       } else {
-        throw Exception('Failed to load staff by scope: ${response.statusCode}');
+        return staffList.map((json) => MemberStaff.fromJson(json)).toList();
       }
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to load staff by scope: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
     } catch (e) {
-      throw Exception('Failed to load staff by scope: $e');
+      throw ApiException(message: 'Failed to load staff by scope: $e');
     }
   }
 
@@ -111,38 +114,40 @@ class ApiService {
   /// Creates a new member.
   Future<Member> createMember(Member member) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/members'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(member.toJson()),
+      final data = await _httpHelper.post(
+        '$baseUrl/members',
+        body: member.toJson(),
       );
-
-      if (response.statusCode == 201) {
-        return Member.fromJson(json.decode(response.body));
-      } else {
-        throw Exception('Failed to create member: ${response.statusCode}');
-      }
+      return Member.fromJson(data);
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to create member: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
     } catch (e) {
-      throw Exception('Failed to create member: $e');
+      throw ApiException(message: 'Failed to create member: $e');
     }
   }
 
   /// Creates a new society staff member.
   Future<SocietyStaff> createSocietyStaff(SocietyStaff staff) async {
     try {
-      final response = await _client.post(
-        Uri.parse('$baseUrl/staff'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(staff.toJson()),
+      final data = await _httpHelper.post(
+        '$baseUrl/staff',
+        body: staff.toJson(),
       );
-
-      if (response.statusCode == 201) {
-        return SocietyStaff.fromJson(json.decode(response.body));
-      } else {
-        throw Exception('Failed to create society staff: ${response.statusCode}');
-      }
+      return SocietyStaff.fromJson(data);
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to create society staff: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
     } catch (e) {
-      throw Exception('Failed to create society staff: $e');
+      throw ApiException(message: 'Failed to create society staff: $e');
     }
   }
 
@@ -402,6 +407,14 @@ class ApiService {
   /// Verifies a staff member's identity.
   Future<bool> verifyStaffIdentity(int staffId, Map<String, dynamic> data) async {
     try {
+      // Get the current member ID from the auth service
+      final memberId = await _authService.getMemberId();
+
+      // Add the verified_by_member_id to the data if not already present
+      if (memberId != null && !data.containsKey('verified_by_member_id')) {
+        data['verified_by_member_id'] = memberId;
+      }
+
       final response = await _httpHelper.put(
         '$baseUrl/staff/$staffId/verify',
         body: data,

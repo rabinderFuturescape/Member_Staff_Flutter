@@ -5,6 +5,7 @@ import '../../../utils/error_handler.dart';
 import '../../../utils/api_exception.dart';
 import '../../../widgets/animated_form_fields.dart';
 import '../../../widgets/micro_interactions.dart';
+import '../../../widgets/logged_in_member_info.dart';
 import 'otp_verification_screen.dart';
 
 /// Screen for verifying a staff member's mobile number.
@@ -15,46 +16,46 @@ class MobileVerificationScreen extends StatefulWidget {
   State<MobileVerificationScreen> createState() => _MobileVerificationScreenState();
 }
 
-class _MobileVerificationScreenState extends State<MobileVerificationScreen> 
+class _MobileVerificationScreenState extends State<MobileVerificationScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _mobileController = TextEditingController();
   final ApiService _apiService = ApiService(baseUrl: 'https://api.example.com');
   bool _isLoading = false;
   bool _isValidMobile = false;
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controllers
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    
+
     // Start the animation
     _animationController.forward();
-    
+
     // Add listener to validate mobile number
     _mobileController.addListener(_validateMobile);
   }
-  
+
   @override
   void dispose() {
     _mobileController.dispose();
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _validateMobile() {
     // Simple validation for 10-digit mobile number
     final mobile = _mobileController.text.trim();
@@ -62,18 +63,18 @@ class _MobileVerificationScreenState extends State<MobileVerificationScreen>
       _isValidMobile = mobile.length == 10 && int.tryParse(mobile) != null;
     });
   }
-  
+
   Future<void> _checkMobileNumber() async {
     if (!_isValidMobile) return;
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final mobile = '91${_mobileController.text.trim()}';
       final response = await _apiService.checkStaffMobile(mobile);
-      
+
       if (mounted) {
         if (response['exists'] == true) {
           if (response['verified'] == false) {
@@ -116,7 +117,7 @@ class _MobileVerificationScreenState extends State<MobileVerificationScreen>
       }
     }
   }
-  
+
   void _showAlreadyVerifiedDialog() {
     showDialog(
       context: context,
@@ -134,7 +135,7 @@ class _MobileVerificationScreenState extends State<MobileVerificationScreen>
       ),
     );
   }
-  
+
   void _showStaffNotFoundDialog() {
     showDialog(
       context: context,
@@ -160,7 +161,7 @@ class _MobileVerificationScreenState extends State<MobileVerificationScreen>
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -186,11 +187,14 @@ class _MobileVerificationScreenState extends State<MobileVerificationScreen>
       ),
     );
   }
-  
+
   Widget _buildHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Display logged-in member info
+        const LoggedInMemberInfo(),
+        const SizedBox(height: 16),
         Text(
           'Verify Staff Member',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -208,7 +212,7 @@ class _MobileVerificationScreenState extends State<MobileVerificationScreen>
       ],
     );
   }
-  
+
   Widget _buildMobileInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,7 +249,7 @@ class _MobileVerificationScreenState extends State<MobileVerificationScreen>
       ],
     );
   }
-  
+
   Widget _buildVerifyButton() {
     return Center(
       child: BounceWidget(

@@ -24,10 +24,11 @@ class HttpHelper {
   /// Makes a POST request to the specified URL.
   Future<dynamic> post(String url, {Map<String, String>? headers, dynamic body}) async {
     final requestHeaders = await _prepareHeaders(headers);
+    final enrichedBody = await _enrichRequestBody(body);
     final response = await _client.post(
       Uri.parse(url),
       headers: requestHeaders,
-      body: body is String ? body : jsonEncode(body),
+      body: enrichedBody is String ? enrichedBody : jsonEncode(enrichedBody),
     );
     return _handleResponse(response, url);
   }
@@ -35,10 +36,11 @@ class HttpHelper {
   /// Makes a PUT request to the specified URL.
   Future<dynamic> put(String url, {Map<String, String>? headers, dynamic body}) async {
     final requestHeaders = await _prepareHeaders(headers);
+    final enrichedBody = await _enrichRequestBody(body);
     final response = await _client.put(
       Uri.parse(url),
       headers: requestHeaders,
-      body: body is String ? body : jsonEncode(body),
+      body: enrichedBody is String ? enrichedBody : jsonEncode(enrichedBody),
     );
     return _handleResponse(response, url);
   }
@@ -46,10 +48,11 @@ class HttpHelper {
   /// Makes a DELETE request to the specified URL.
   Future<dynamic> delete(String url, {Map<String, String>? headers, dynamic body}) async {
     final requestHeaders = await _prepareHeaders(headers);
+    final enrichedBody = await _enrichRequestBody(body);
     final response = await _client.delete(
       Uri.parse(url),
       headers: requestHeaders,
-      body: body is String ? body : (body != null ? jsonEncode(body) : null),
+      body: enrichedBody is String ? enrichedBody : (enrichedBody != null ? jsonEncode(enrichedBody) : null),
     );
     return _handleResponse(response, url);
   }
@@ -73,6 +76,55 @@ class HttpHelper {
     }
 
     return requestHeaders;
+  }
+
+  /// Enriches the request body with member context information.
+  Future<dynamic> _enrichRequestBody(dynamic body) async {
+    if (body == null) {
+      body = {};
+    }
+
+    // If body is a string, try to parse it as JSON
+    if (body is String) {
+      try {
+        body = jsonDecode(body);
+      } catch (e) {
+        // If it's not valid JSON, return it as is
+        return body;
+      }
+    }
+
+    // If body is not a Map, we can't enrich it
+    if (body is! Map) {
+      return body;
+    }
+
+    // Convert to a mutable map if it's not already
+    final Map<String, dynamic> enrichedBody = Map<String, dynamic>.from(body);
+
+    // Add member context if not already present
+    if (!enrichedBody.containsKey('member_id')) {
+      final memberId = await _authService.getMemberId();
+      if (memberId != null) {
+        enrichedBody['member_id'] = memberId;
+      }
+    }
+
+    if (!enrichedBody.containsKey('unit_id')) {
+      final unitId = await _authService.getUnitId();
+      if (unitId != null) {
+        enrichedBody['unit_id'] = unitId;
+      }
+    }
+
+    if (!enrichedBody.containsKey('company_id')) {
+      final companyId = await _authService.getCompanyId();
+      if (companyId != null) {
+        enrichedBody['company_id'] = companyId;
+      }
+    }
+
+    return enrichedBody;
   }
 
   /// Handles the response from an HTTP request.

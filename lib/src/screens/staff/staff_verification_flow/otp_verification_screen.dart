@@ -6,6 +6,7 @@ import '../../../utils/error_handler.dart';
 import '../../../utils/api_exception.dart';
 import '../../../widgets/animated_form_fields.dart';
 import '../../../widgets/micro_interactions.dart';
+import '../../../widgets/logged_in_member_info.dart';
 import 'identity_form_screen.dart';
 
 /// Screen for OTP verification of a staff member.
@@ -39,29 +40,29 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
   bool _otpSent = false;
   int _resendTimer = 0;
   Timer? _timer;
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controllers
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    
+
     // Start the animation
     _animationController.forward();
-    
+
     // Add listeners to OTP text fields
     for (int i = 0; i < 6; i++) {
       _otpControllers[i].addListener(() {
@@ -69,7 +70,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       });
     }
   }
-  
+
   @override
   void dispose() {
     for (var controller in _otpControllers) {
@@ -82,38 +83,38 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
     _animationController.dispose();
     super.dispose();
   }
-  
+
   void _handleOtpInput(int index) {
     if (_otpControllers[index].text.length == 1 && index < 5) {
       _focusNodes[index + 1].requestFocus();
     }
   }
-  
+
   String _getOtp() {
     return _otpControllers.map((controller) => controller.text).join();
   }
-  
+
   bool _isOtpComplete() {
     return _getOtp().length == 6;
   }
-  
+
   Future<void> _sendOtp() async {
     if (_isSendingOtp) return;
-    
+
     setState(() {
       _isSendingOtp = true;
     });
-    
+
     try {
       await _apiService.sendOtp(widget.mobile);
-      
+
       if (mounted) {
         setState(() {
           _otpSent = true;
           _resendTimer = 30; // 30 seconds cooldown
           _startResendTimer();
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('OTP sent successfully'),
@@ -141,7 +142,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       }
     }
   }
-  
+
   void _startResendTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_resendTimer > 0) {
@@ -153,18 +154,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       }
     });
   }
-  
+
   Future<void> _verifyOtp() async {
     if (_isVerifyingOtp || !_isOtpComplete()) return;
-    
+
     setState(() {
       _isVerifyingOtp = true;
     });
-    
+
     try {
       final otp = _getOtp();
       final success = await _apiService.verifyOtp(widget.mobile, otp);
-      
+
       if (mounted) {
         if (success) {
           // OTP verification successful, navigate to identity form
@@ -185,7 +186,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
               backgroundColor: Colors.red,
             ),
           );
-          
+
           // Clear OTP fields
           for (var controller in _otpControllers) {
             controller.clear();
@@ -213,7 +214,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,11 +240,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       ),
     );
   }
-  
+
   Widget _buildHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Display logged-in member info
+        const LoggedInMemberInfo(),
+        const SizedBox(height: 16),
         Text(
           'OTP Verification',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -261,7 +265,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       ],
     );
   }
-  
+
   Widget _buildOtpInput() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,7 +320,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen>
       ],
     );
   }
-  
+
   Widget _buildActionButtons() {
     return Column(
       children: [

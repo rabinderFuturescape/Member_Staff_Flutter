@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: onesociety-api
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - onesociety-network
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: onesociety-nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - onesociety-network
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: onesociety-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - onesociety-mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - onesociety-network
+
+networks:
+  onesociety-network:
+    driver: bridge
+
+volumes:
+  onesociety-mysql-data:

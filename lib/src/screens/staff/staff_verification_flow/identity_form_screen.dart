@@ -8,6 +8,8 @@ import '../../../utils/error_handler.dart';
 import '../../../utils/api_exception.dart';
 import '../../../widgets/animated_form_fields.dart';
 import '../../../widgets/micro_interactions.dart';
+import '../../../widgets/logged_in_member_info.dart';
+import '../../../services/auth_service.dart';
 import 'verification_success_screen.dart';
 
 /// Screen for capturing staff identity information.
@@ -32,37 +34,38 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _kinNameController = TextEditingController();
   final TextEditingController _kinMobileController = TextEditingController();
-  
+
   final ApiService _apiService = ApiService(baseUrl: 'https://api.example.com');
+  final AuthService _authService = AuthService();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   int _currentStep = 0;
   bool _isSubmitting = false;
   File? _photoFile;
-  
+
   // Animation controllers
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize animation controllers
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-    
+
     _fadeAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    
+
     // Start the animation
     _animationController.forward();
   }
-  
+
   @override
   void dispose() {
     _aadhaarController.dispose();
@@ -72,7 +75,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
     _animationController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _takePicture() async {
     final XFile? photo = await _imagePicker.pickImage(
       source: ImageSource.camera,
@@ -80,14 +83,14 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       imageQuality: 80,
       maxWidth: 800,
     );
-    
+
     if (photo != null) {
       setState(() {
         _photoFile = File(photo.path);
       });
     }
   }
-  
+
   Future<void> _submitForm() async {
     if (_photoFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -98,30 +101,42 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       );
       return;
     }
-    
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     setState(() {
       _isSubmitting = true;
     });
-    
+
     try {
       // Convert image to base64
       final bytes = await _photoFile!.readAsBytes();
       final base64Image = base64Encode(bytes);
-      
+
+      // Get member context from auth service
+      final memberId = await _authService.getMemberId();
+      final unitId = await _authService.getUnitId();
+      final companyId = await _authService.getCompanyId();
+
+      if (memberId == null || unitId == null || companyId == null) {
+        throw ApiException(message: 'Missing member context information');
+      }
+
       final data = {
         'aadhaar_number': _aadhaarController.text.trim(),
         'residential_address': _addressController.text.trim(),
         'next_of_kin_name': _kinNameController.text.trim(),
         'next_of_kin_mobile': '91${_kinMobileController.text.trim()}',
         'photo_base64': base64Image,
+        'member_id': memberId,
+        'unit_id': unitId,
+        'company_id': companyId,
       };
-      
+
       final success = await _apiService.verifyStaffIdentity(widget.staffId, data);
-      
+
       if (mounted && success) {
         Navigator.pushReplacement(
           context,
@@ -153,7 +168,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       }
     }
   }
-  
+
   void _nextStep() {
     if (_currentStep < 3) {
       setState(() {
@@ -161,7 +176,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       });
     }
   }
-  
+
   void _previousStep() {
     if (_currentStep > 0) {
       setState(() {
@@ -169,7 +184,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       });
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -177,6 +192,13 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
         title: const Text('Staff Identity Verification'),
         elevation: 0,
       ),
+      // Add the LoggedInMemberInfo widget at the top of the screen
+      persistentFooterButtons: const [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: LoggedInMemberInfo(),
+        ),
+      ],
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Form(
@@ -264,7 +286,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
           : null,
     );
   }
-  
+
   Widget _buildPhotoStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,7 +332,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       ],
     );
   }
-  
+
   Widget _buildAadhaarStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,7 +365,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       ],
     );
   }
-  
+
   Widget _buildAddressStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,7 +395,7 @@ class _IdentityFormScreenState extends State<IdentityFormScreen>
       ],
     );
   }
-  
+
   Widget _buildKinStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

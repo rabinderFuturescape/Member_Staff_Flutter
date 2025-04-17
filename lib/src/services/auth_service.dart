@@ -8,13 +8,13 @@ import '../models/auth_user.dart';
 class AuthService {
   static const String _tokenKey = 'auth_token';
   static const String _userKey = 'auth_user';
-  
+
   final FlutterSecureStorage _secureStorage;
-  
+
   AuthService({
     FlutterSecureStorage? secureStorage,
   }) : _secureStorage = secureStorage ?? const FlutterSecureStorage();
-  
+
   /// Authenticates a user with a token from the parent app.
   Future<AuthUser?> authenticateWithToken(String token) async {
     try {
@@ -22,10 +22,10 @@ class AuthService {
       if (!_isValidToken(token)) {
         return null;
       }
-      
+
       // Extract user information from the token
       final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      
+
       // Create the user object
       final user = AuthUser(
         id: decodedToken['sub'] ?? '',
@@ -33,19 +33,23 @@ class AuthService {
         email: decodedToken['email'] ?? '',
         role: decodedToken['role'] ?? 'user',
         token: token,
+        memberId: decodedToken['member_id']?.toString(),
+        unitId: decodedToken['unit_id']?.toString(),
+        companyId: decodedToken['company_id']?.toString(),
+        unitNumber: decodedToken['unit_number']?.toString(),
       );
-      
+
       // Save the token and user
       await _saveToken(token);
       await _saveUser(user);
-      
+
       return user;
     } catch (e) {
       print('Error authenticating with token: $e');
       return null;
     }
   }
-  
+
   /// Checks if a token is valid.
   bool _isValidToken(String token) {
     try {
@@ -53,64 +57,98 @@ class AuthService {
       if (JwtDecoder.isExpired(token)) {
         return false;
       }
-      
+
       // Additional validation can be added here
-      
+
       return true;
     } catch (e) {
       print('Error validating token: $e');
       return false;
     }
   }
-  
+
   /// Saves the authentication token securely.
   Future<void> _saveToken(String token) async {
     await _secureStorage.write(key: _tokenKey, value: token);
   }
-  
+
   /// Saves the user information.
   Future<void> _saveUser(AuthUser user) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, jsonEncode(user.toJson()));
   }
-  
+
   /// Gets the current authentication token.
   Future<String?> getToken() async {
     return await _secureStorage.read(key: _tokenKey);
   }
-  
+
+  /// Gets the member ID from the current user.
+  Future<String?> getMemberId() async {
+    final user = await getCurrentUser();
+    return user?.memberId;
+  }
+
+  /// Gets the unit ID from the current user.
+  Future<String?> getUnitId() async {
+    final user = await getCurrentUser();
+    return user?.unitId;
+  }
+
+  /// Gets the company ID from the current user.
+  Future<String?> getCompanyId() async {
+    final user = await getCurrentUser();
+    return user?.companyId;
+  }
+
+  /// Gets the unit number from the current user.
+  Future<String?> getUnitNumber() async {
+    final user = await getCurrentUser();
+    return user?.unitNumber;
+  }
+
+  /// Gets the authorization header for API requests.
+  Future<Map<String, String>> getAuthHeader() async {
+    final token = await getToken();
+    if (token == null) return {};
+
+    return {
+      'Authorization': 'Bearer $token',
+    };
+  }
+
   /// Gets the current authenticated user.
   Future<AuthUser?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString(_userKey);
-    
+
     if (userJson == null) {
       return null;
     }
-    
+
     try {
       final user = AuthUser.fromJson(jsonDecode(userJson));
-      
+
       // Verify that the token is still valid
       final token = await getToken();
       if (token == null || token != user.token || !_isValidToken(token)) {
         await logout();
         return null;
       }
-      
+
       return user;
     } catch (e) {
       print('Error getting current user: $e');
       return null;
     }
   }
-  
+
   /// Checks if the user is authenticated.
   Future<bool> isAuthenticated() async {
     final token = await getToken();
     return token != null && _isValidToken(token);
   }
-  
+
   /// Logs out the current user.
   Future<void> logout() async {
     await _secureStorage.delete(key: _tokenKey);

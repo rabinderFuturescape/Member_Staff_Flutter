@@ -5,6 +5,10 @@ class AuthUser {
   final String email;
   final String role;
   final String token;
+  final String? memberId;
+  final String? unitId;
+  final String? companyId;
+  final String? unitNumber;
 
   AuthUser({
     required this.id,
@@ -12,6 +16,10 @@ class AuthUser {
     required this.email,
     required this.role,
     required this.token,
+    this.memberId,
+    this.unitId,
+    this.companyId,
+    this.unitNumber,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
@@ -21,6 +29,10 @@ class AuthUser {
       email: json['email'],
       role: json['role'],
       token: json['token'],
+      memberId: json['member_id'],
+      unitId: json['unit_id'],
+      companyId: json['company_id'],
+      unitNumber: json['unit_number'],
     );
   }
 
@@ -31,6 +43,10 @@ class AuthUser {
       'email': email,
       'role': role,
       'token': token,
+      'member_id': memberId,
+      'unit_id': unitId,
+      'company_id': companyId,
+      'unit_number': unitNumber,
     };
   }
 
@@ -41,6 +57,10 @@ class AuthUser {
     String? email,
     String? role,
     String? token,
+    String? memberId,
+    String? unitId,
+    String? companyId,
+    String? unitNumber,
   }) {
     return AuthUser(
       id: id ?? this.id,
@@ -48,6 +68,10 @@ class AuthUser {
       email: email ?? this.email,
       role: role ?? this.role,
       token: token ?? this.token,
+      memberId: memberId ?? this.memberId,
+      unitId: unitId ?? this.unitId,
+      companyId: companyId ?? this.companyId,
+      unitNumber: unitNumber ?? this.unitNumber,
     );
   }
 }
