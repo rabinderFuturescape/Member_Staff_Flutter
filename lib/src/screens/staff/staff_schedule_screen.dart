@@ -9,6 +9,13 @@ import '../../providers/notification_provider.dart';
 import '../../utils/error_handler.dart';
 import '../../utils/api_exception.dart';
 import '../../utils/date_time_utils.dart';
+import '../../utils/animation_constants.dart';
+import '../../utils/animation_preferences.dart';
+import '../../widgets/loading_animations.dart';
+import '../../widgets/animated_time_slot_list.dart';
+import '../../widgets/animated_form_fields.dart';
+import '../../widgets/micro_interactions.dart';
+import '../../widgets/hero_widgets.dart';
 
 /// Screen for viewing and managing a staff member's schedule.
 class StaffScheduleScreen extends StatefulWidget {
@@ -25,7 +32,7 @@ class StaffScheduleScreen extends StatefulWidget {
   State<StaffScheduleScreen> createState() => _StaffScheduleScreenState();
 }
 
-class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
+class _StaffScheduleScreenState extends State<StaffScheduleScreen> with SingleTickerProviderStateMixin {
   final ApiService _apiService = ApiService(baseUrl: 'https://api.example.com');
   bool _isLoading = true;
   Schedule? _schedule;
@@ -35,14 +42,39 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
   final DateFormat _timeFormat = DateFormat('HH:mm');
   String? _staffName;
 
+  // Animation controllers
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
     _staffName = widget.staffName;
+
+    // Initialize animation controllers
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: AnimationConstants.mediumDuration,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: AnimationConstants.entranceCurve,
+    );
+
     _loadSchedule();
     if (_staffName == null) {
       _loadStaffInfo();
     }
+
+    // Start the fade-in animation
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStaffInfo() async {
@@ -223,79 +255,288 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Staff Schedule'),
+        title: Text(
+          _staffName != null ? '$_staffName\'s Schedule' : 'Staff Schedule',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildCalendarView(),
-                  ],
+          ? const Center(child: PulsatingLoadingIndicator())
+          : FadeTransition(
+              opacity: _fadeAnimation,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      const SizedBox(height: 16),
+                      _buildCalendarView(),
+                    ],
+                  ),
                 ),
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addTimeSlot,
-        tooltip: 'Add Time Slot',
-        child: const Icon(Icons.add),
+      floatingActionButton: _isLoading
+          ? null
+          : ScaleTransition(
+              scale: _fadeAnimation,
+              child: FloatingActionButton(
+                onPressed: _addTimeSlot,
+                tooltip: 'Add Time Slot',
+                child: const Icon(Icons.add),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            if (_staffName != null)
+              StaffAvatarHero(
+                staffId: widget.staffId,
+                staffName: _staffName!,
+                radius: 24,
+              ),
+            if (_staffName != null)
+              const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _displayDateFormat.format(_selectedDate),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Tap on a day to view schedule',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            BounceWidget(
+              onTap: () => _selectDate(context),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCalendarView() {
-    return CalendarView(
-      schedule: _schedule,
-      selectedDay: _selectedDate,
-      onDaySelected: (day) {
-        setState(() {
-          _selectedDate = day;
-        });
-      },
-      onTimeSlotTap: (timeSlot) {
-        _showTimeSlotOptions(timeSlot);
-      },
+    return Column(
+      children: [
+        CalendarView(
+          schedule: _schedule,
+          selectedDay: _selectedDate,
+          onDaySelected: (day) {
+            setState(() {
+              _selectedDate = day;
+            });
+          },
+          onTimeSlotTap: (timeSlot) {
+            _showTimeSlotOptions(timeSlot);
+          },
+        ),
+        const SizedBox(height: 24),
+        _buildTimeSlotsList(),
+      ],
+    );
+  }
+
+  Widget _buildTimeSlotsList() {
+    if (_schedule == null) {
+      return const SizedBox.shrink();
+    }
+
+    final slotsForDate = _schedule!.getBookedSlotsForDate(
+      _dateFormat.format(_selectedDate),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Time Slots',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
+            ),
+            AnimatedButton(
+              text: 'Add Slot',
+              onPressed: _addTimeSlot,
+              isOutlined: true,
+              icon: const Icon(Icons.add, size: 16),
+              width: 120,
+              height: 40,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        AnimatedTimeSlotList(
+          timeSlots: slotsForDate,
+          onTimeSlotTap: _showTimeSlotOptions,
+          isLoading: _isLoading,
+        ),
+      ],
     );
   }
 
   void _showTimeSlotOptions(TimeSlot timeSlot) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.access_time),
-                title: Text(timeSlot.formattedTimeRange),
-                subtitle: Text('Date: ${timeSlot.formattedDate}'),
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 1.0, end: 0.0),
+          duration: AnimationConstants.mediumDuration,
+          curve: AnimationConstants.entranceCurve,
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, 100 * value),
+              child: Opacity(
+                opacity: 1 - value,
+                child: child,
               ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.delete, color: Colors.red),
-                title: const Text('Remove Time Slot'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _removeTimeSlot(timeSlot);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.edit, color: Colors.blue),
-                title: const Text('Edit Time Slot'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _editTimeSlot(timeSlot);
-                },
-              ),
-            ],
+            );
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: timeSlot.isBooked ? Colors.red : Colors.green,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              timeSlot.formattedTimeRange,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Date: ${timeSlot.formattedDate}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AnimatedButton(
+                        text: 'Edit',
+                        icon: const Icon(Icons.edit, size: 16),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _editTimeSlot(timeSlot);
+                        },
+                        color: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: AnimatedButton(
+                        text: 'Remove',
+                        icon: const Icon(Icons.delete, size: 16),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _removeTimeSlot(timeSlot);
+                        },
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                AnimatedButton(
+                  text: 'Cancel',
+                  onPressed: () => Navigator.pop(context),
+                  isOutlined: true,
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         );
       },
