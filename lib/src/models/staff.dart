@@ -1,23 +1,32 @@
-/// Model class representing a staff member.
+import 'staff_scope.dart';
+import 'schedule.dart';
+
+/// Base model class representing a staff member.
 class Staff {
   final String id;
   final String name;
   final String email;
   final String phone;
-  final String position;
+  final String? position;
   final DateTime hireDate;
-  final double salary;
+  final double? salary;
   final bool isActive;
+  final StaffScope staffScope;
+  final String? designation;
+  final Schedule? schedule;
 
   Staff({
     required this.id,
     required this.name,
     required this.email,
     required this.phone,
-    required this.position,
+    this.position,
     required this.hireDate,
-    required this.salary,
+    this.salary,
     required this.isActive,
+    required this.staffScope,
+    this.designation,
+    this.schedule,
   });
 
   factory Staff.fromJson(Map<String, dynamic> json) {
@@ -28,21 +37,30 @@ class Staff {
       phone: json['phone'],
       position: json['position'],
       hireDate: DateTime.parse(json['hireDate']),
-      salary: json['salary'].toDouble(),
+      salary: json['salary'] != null ? json['salary'].toDouble() : null,
       isActive: json['isActive'],
+      staffScope: StaffScopeExtension.fromString(json['staff_scope'] ?? 'member'),
+      designation: json['designation'],
+      schedule: json['schedule'] != null ? Schedule.fromJson(json['schedule']) : null,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> data = {
       'id': id,
       'name': name,
       'email': email,
       'phone': phone,
-      'position': position,
       'hireDate': hireDate.toIso8601String(),
-      'salary': salary,
       'isActive': isActive,
+      'staff_scope': staffScope.name,
     };
+
+    if (position != null) data['position'] = position;
+    if (salary != null) data['salary'] = salary;
+    if (designation != null) data['designation'] = designation;
+    if (schedule != null) data['schedule'] = schedule!.toJson();
+
+    return data;
   }
 }
