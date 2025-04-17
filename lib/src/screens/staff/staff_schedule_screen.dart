@@ -8,12 +8,18 @@ import '../../widgets/calendar_view.dart';
 import '../../providers/notification_provider.dart';
 import '../../utils/error_handler.dart';
 import '../../utils/api_exception.dart';
+import '../../utils/date_time_utils.dart';
 
 /// Screen for viewing and managing a staff member's schedule.
 class StaffScheduleScreen extends StatefulWidget {
   final String staffId;
+  final String? staffName; // Optional staff name parameter
 
-  const StaffScheduleScreen({Key? key, required this.staffId}) : super(key: key);
+  const StaffScheduleScreen({
+    Key? key,
+    required this.staffId,
+    this.staffName,
+  }) : super(key: key);
 
   @override
   State<StaffScheduleScreen> createState() => _StaffScheduleScreenState();
@@ -27,11 +33,31 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
   final DateFormat _dateFormat = DateFormat('yyyy-MM-dd');
   final DateFormat _displayDateFormat = DateFormat('EEEE, MMMM d, yyyy');
   final DateFormat _timeFormat = DateFormat('HH:mm');
+  String? _staffName;
 
   @override
   void initState() {
     super.initState();
+    _staffName = widget.staffName;
     _loadSchedule();
+    if (_staffName == null) {
+      _loadStaffInfo();
+    }
+  }
+
+  Future<void> _loadStaffInfo() async {
+    try {
+      // Fetch staff information to get the name
+      final response = await _apiService.getStaffById(widget.staffId);
+      if (mounted) {
+        setState(() {
+          _staffName = response.name;
+        });
+      }
+    } catch (e) {
+      // If we can't get the staff name, we'll use a default
+      print('Error loading staff info: $e');
+    }
   }
 
   Future<void> _loadSchedule() async {
@@ -139,7 +165,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         // Send notification
         final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
         await notificationProvider.notifyNewTimeSlot(
-          staffName: 'Staff', // Ideally, you would pass the actual staff name here
+          staffName: _staffName ?? 'Staff',
           timeSlot: timeSlot,
         );
 
@@ -172,7 +198,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         // Send notification
         final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
         await notificationProvider.notifyRemovedTimeSlot(
-          staffName: 'Staff', // Ideally, you would pass the actual staff name here
+          staffName: _staffName ?? 'Staff',
           timeSlot: timeSlot,
         );
 
@@ -249,8 +275,8 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.access_time),
-                title: Text('${timeSlot.startTime} - ${timeSlot.endTime}'),
-                subtitle: Text('Date: ${timeSlot.date}'),
+                title: Text(timeSlot.formattedTimeRange),
+                subtitle: Text('Date: ${timeSlot.formattedDate}'),
               ),
               const Divider(),
               ListTile(
@@ -266,10 +292,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                 title: const Text('Edit Time Slot'),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Implement edit time slot
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Edit feature coming soon')),
-                  );
+                  _editTimeSlot(timeSlot);
                 },
               ),
             ],
@@ -277,5 +300,115 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         );
       },
     );
+  }
+
+  Future<void> _editTimeSlot(TimeSlot oldSlot) async {
+    // Parse the old slot's date and time
+    final oldDate = DateTimeUtils.parseDate(oldSlot.date);
+    final oldStartTime = DateTimeUtils.parseTime(oldSlot.startTime);
+    final oldEndTime = DateTimeUtils.parseTime(oldSlot.endTime);
+
+    // Initialize with the old values
+    DateTime selectedDate = oldDate;
+    TimeOfDay selectedStartTime = TimeOfDay(hour: oldStartTime.hour, minute: oldStartTime.minute);
+    TimeOfDay selectedEndTime = TimeOfDay(hour: oldEndTime.hour, minute: oldEndTime.minute);
+
+    // Show date picker
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      helpText: 'Select Date',
+    );
+
+    if (pickedDate == null) return; // User canceled
+    selectedDate = pickedDate;
+
+    // Show start time picker
+    final TimeOfDay? pickedStartTime = await showTimePicker(
+      context: context,
+      initialTime: selectedStartTime,
+      helpText: 'Select Start Time',
+    );
+
+    if (pickedStartTime == null) return; // User canceled
+    selectedStartTime = pickedStartTime;
+
+    // Show end time picker
+    final TimeOfDay? pickedEndTime = await showTimePicker(
+      context: context,
+      initialTime: selectedEndTime,
+      helpText: 'Select End Time',
+    );
+
+    if (pickedEndTime == null) return; // User canceled
+    selectedEndTime = pickedEndTime;
+
+    // Validate that end time is after start time
+    final now = DateTime.now();
+    final startDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      selectedStartTime.hour,
+      selectedStartTime.minute,
+    );
+    final endDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      selectedEndTime.hour,
+      selectedEndTime.minute,
+    );
+
+    if (endDateTime.isBefore(startDateTime)) {
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'End time must be after start time',
+        );
+      }
+      return;
+    }
+
+    // Create the new time slot
+    final newSlot = TimeSlot(
+      date: DateTimeUtils.formatDate(selectedDate),
+      startTime: DateTimeUtils.formatTime(startDateTime),
+      endTime: DateTimeUtils.formatTime(endDateTime),
+      isBooked: oldSlot.isBooked,
+    );
+
+    try {
+      final success = await _apiService.updateTimeSlotInSchedule(widget.staffId, oldSlot, newSlot);
+      if (success && mounted) {
+        ErrorHandler.showSuccessSnackBar(
+          context,
+          'Time slot updated successfully',
+        );
+
+        // Send notification
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        await notificationProvider.notifyNewTimeSlot(
+          staffName: _staffName ?? 'Staff',
+          timeSlot: newSlot,
+        );
+
+        _loadSchedule();
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ErrorHandler.handleApiException(
+          context,
+          e,
+          onRetry: () => _editTimeSlot(oldSlot),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.handleException(context, e);
+      }
+    }
   }
 }

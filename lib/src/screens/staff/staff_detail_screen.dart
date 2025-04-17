@@ -62,7 +62,10 @@ class StaffDetailScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => StaffScheduleScreen(staffId: staff.id),
+                      builder: (context) => StaffScheduleScreen(
+                        staffId: staff.id,
+                        staffName: staff.name,
+                      ),
                     ),
                   );
                 },

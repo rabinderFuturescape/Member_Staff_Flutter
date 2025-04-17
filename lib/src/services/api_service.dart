@@ -85,6 +85,30 @@ class ApiService {
     }
   }
 
+  /// Fetches a staff member by ID.
+  Future<Staff> getStaffById(String staffId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$baseUrl/staff/$staffId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final staffScope = StaffScopeExtension.fromString(data['staff_scope'] ?? 'member');
+
+        if (staffScope == StaffScope.society) {
+          return SocietyStaff.fromJson(data);
+        } else {
+          return MemberStaff.fromJson(data);
+        }
+      } else {
+        throw Exception('Failed to load staff: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load staff: $e');
+    }
+  }
+
   /// Creates a new member.
   Future<Member> createMember(Member member) async {
     try {
@@ -291,6 +315,28 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Failed to remove time slot: $e');
+    }
+  }
+
+  /// Updates a time slot in a staff member's schedule.
+  Future<bool> updateTimeSlotInSchedule(String staffId, TimeSlot oldSlot, TimeSlot newSlot) async {
+    try {
+      final response = await _client.put(
+        Uri.parse('$baseUrl/staff/$staffId/schedule/slots'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'old_slot': oldSlot.toJson(),
+          'new_slot': newSlot.toJson(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        throw Exception('Failed to update time slot: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to update time slot: $e');
     }
   }
 }
