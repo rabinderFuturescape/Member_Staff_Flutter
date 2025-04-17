@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../models/schedule.dart';
 import '../../services/api_service.dart';
 import '../../widgets/app_button.dart';
+import '../../widgets/calendar_view.dart';
+import '../../providers/notification_provider.dart';
+import '../../utils/error_handler.dart';
+import '../../utils/api_exception.dart';
 
 /// Screen for viewing and managing a staff member's schedule.
 class StaffScheduleScreen extends StatefulWidget {
@@ -39,14 +44,24 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
       setState(() {
         _schedule = schedule;
       });
+    } on ApiException catch (e) {
+      if (mounted) {
+        ErrorHandler.handleApiException(
+          context,
+          e,
+          onRetry: _loadSchedule,
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading schedule: $e')),
-      );
+      if (mounted) {
+        ErrorHandler.handleException(context, e);
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -99,8 +114,9 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
 
     if (endDateTime.isBefore(startDateTime)) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('End time must be after start time')),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          'End time must be after start time',
         );
       }
       return;
@@ -115,16 +131,31 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
     try {
       final success = await _apiService.addTimeSlotToSchedule(widget.staffId, timeSlot);
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Time slot added successfully')),
+        ErrorHandler.showSuccessSnackBar(
+          context,
+          'Time slot added successfully',
         );
+
+        // Send notification
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        await notificationProvider.notifyNewTimeSlot(
+          staffName: 'Staff', // Ideally, you would pass the actual staff name here
+          timeSlot: timeSlot,
+        );
+
         _loadSchedule();
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ErrorHandler.handleApiException(
+          context,
+          e,
+          onRetry: () => _addTimeSlot(),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding time slot: $e')),
-        );
+        ErrorHandler.handleException(context, e);
       }
     }
   }
@@ -133,16 +164,31 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
     try {
       final success = await _apiService.removeTimeSlotFromSchedule(widget.staffId, timeSlot);
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Time slot removed successfully')),
+        ErrorHandler.showSuccessSnackBar(
+          context,
+          'Time slot removed successfully',
         );
+
+        // Send notification
+        final notificationProvider = Provider.of<NotificationProvider>(context, listen: false);
+        await notificationProvider.notifyRemovedTimeSlot(
+          staffName: 'Staff', // Ideally, you would pass the actual staff name here
+          timeSlot: timeSlot,
+        );
+
         _loadSchedule();
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ErrorHandler.handleApiException(
+          context,
+          e,
+          onRetry: () => _removeTimeSlot(timeSlot),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error removing time slot: $e')),
-        );
+        ErrorHandler.handleException(context, e);
       }
     }
   }
@@ -155,107 +201,78 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildDateSelector(),
-                Expanded(
-                  child: _buildScheduleForDate(),
+          : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCalendarView(),
+                  ],
                 ),
-              ],
+              ),
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addTimeSlot,
+        tooltip: 'Add Time Slot',
         child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildDateSelector() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.grey[100],
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios),
-            onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.subtract(const Duration(days: 1));
-              });
-            },
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _selectDate(context),
-              child: Text(
-                _displayDateFormat.format(_selectedDate),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_forward_ios),
-            onPressed: () {
-              setState(() {
-                _selectedDate = _selectedDate.add(const Duration(days: 1));
-              });
-            },
-          ),
-        ],
-      ),
+  Widget _buildCalendarView() {
+    return CalendarView(
+      schedule: _schedule,
+      selectedDay: _selectedDate,
+      onDaySelected: (day) {
+        setState(() {
+          _selectedDate = day;
+        });
+      },
+      onTimeSlotTap: (timeSlot) {
+        _showTimeSlotOptions(timeSlot);
+      },
     );
   }
 
-  Widget _buildScheduleForDate() {
-    if (_schedule == null) {
-      return const Center(
-        child: Text('No schedule available'),
-      );
-    }
-
-    final dateString = _dateFormat.format(_selectedDate);
-    final slotsForDate = _schedule!.getBookedSlotsForDate(dateString);
-
-    if (slotsForDate.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'No time slots for this date',
-              style: TextStyle(fontSize: 18),
-            ),
-            const SizedBox(height: 16),
-            AppButton(
-              text: 'Add Time Slot',
-              onPressed: _addTimeSlot,
-              width: 200,
-              icon: const Icon(Icons.add, color: Colors.white),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: slotsForDate.length,
-      itemBuilder: (context, index) {
-        final slot = slotsForDate[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          child: ListTile(
-            leading: const Icon(Icons.access_time),
-            title: Text('${slot.startTime} - ${slot.endTime}'),
-            subtitle: Text('Date: ${slot.date}'),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _removeTimeSlot(slot),
-            ),
+  void _showTimeSlotOptions(TimeSlot timeSlot) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.access_time),
+                title: Text('${timeSlot.startTime} - ${timeSlot.endTime}'),
+                subtitle: Text('Date: ${timeSlot.date}'),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remove Time Slot'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removeTimeSlot(timeSlot);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.edit, color: Colors.blue),
+                title: const Text('Edit Time Slot'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement edit time slot
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Edit feature coming soon')),
+                  );
+                },
+              ),
+            ],
           ),
         );
       },

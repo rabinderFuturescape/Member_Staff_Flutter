@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'staff/staff_list_screen.dart';
+import 'settings/settings_screen.dart';
 
 /// The home screen of the application.
 class HomeScreen extends StatelessWidget {
@@ -74,7 +75,10 @@ class HomeScreen extends StatelessWidget {
             'Settings',
             Icons.settings,
             Colors.purple,
-            () {}, // TODO: Implement settings
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            ),
           ),
         ],
       ),

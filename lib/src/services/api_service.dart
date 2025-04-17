@@ -7,30 +7,43 @@ import '../models/society_staff.dart';
 import '../models/member_staff.dart';
 import '../models/member_staff_assignment.dart';
 import '../models/schedule.dart';
+import 'auth_service.dart';
+import '../utils/api_exception.dart';
+import '../utils/http_helper.dart';
 
 /// Service class for handling API communication.
 class ApiService {
   final String baseUrl;
-  final http.Client _client;
+  final HttpHelper _httpHelper;
+  final AuthService _authService;
 
   ApiService({
     required this.baseUrl,
     http.Client? client,
-  }) : _client = client ?? http.Client();
+    AuthService? authService,
+    HttpHelper? httpHelper,
+  }) :
+    _authService = authService ?? AuthService(),
+    _httpHelper = httpHelper ?? HttpHelper(
+      client: client,
+      authService: authService ?? AuthService(),
+    );
 
   /// Fetches all members from the API.
   Future<List<Member>> getMembers() async {
     try {
-      final response = await _client.get(Uri.parse('$baseUrl/members'));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => Member.fromJson(json)).toList();
-      } else {
-        throw Exception('Failed to load members: ${response.statusCode}');
-      }
+      final data = await _httpHelper.get('$baseUrl/members');
+      final List<dynamic> membersList = data as List<dynamic>;
+      return membersList.map((json) => Member.fromJson(json)).toList();
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to load members: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
     } catch (e) {
-      throw Exception('Failed to load members: $e');
+      throw ApiException(message: 'Failed to load members: $e');
     }
   }
 
