@@ -88,24 +88,23 @@ class ApiService {
   /// Fetches a staff member by ID.
   Future<Staff> getStaffById(String staffId) async {
     try {
-      final response = await _client.get(
-        Uri.parse('$baseUrl/staff/$staffId'),
-      );
+      final data = await _httpHelper.get('$baseUrl/staff/$staffId');
+      final staffScope = StaffScopeExtension.fromString(data['staff_scope'] ?? 'member');
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final staffScope = StaffScopeExtension.fromString(data['staff_scope'] ?? 'member');
-
-        if (staffScope == StaffScope.society) {
-          return SocietyStaff.fromJson(data);
-        } else {
-          return MemberStaff.fromJson(data);
-        }
+      if (staffScope == StaffScope.society) {
+        return SocietyStaff.fromJson(data);
       } else {
-        throw Exception('Failed to load staff: ${response.statusCode}');
+        return MemberStaff.fromJson(data);
       }
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to load staff: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
     } catch (e) {
-      throw Exception('Failed to load staff: $e');
+      throw ApiException(message: 'Failed to load staff: $e');
     }
   }
 
@@ -337,6 +336,86 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Failed to update time slot: $e');
+    }
+  }
+
+  /// Checks if a staff member exists with the given mobile number.
+  Future<Map<String, dynamic>> checkStaffMobile(String mobile) async {
+    try {
+      final data = await _httpHelper.get('$baseUrl/staff/check?mobile=$mobile');
+      return data;
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to check staff mobile: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
+    } catch (e) {
+      throw ApiException(message: 'Failed to check staff mobile: $e');
+    }
+  }
+
+  /// Sends an OTP to the given mobile number.
+  Future<bool> sendOtp(String mobile) async {
+    try {
+      final data = await _httpHelper.post(
+        '$baseUrl/staff/send-otp',
+        body: {'mobile': mobile},
+      );
+      return data['success'] ?? false;
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to send OTP: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
+    } catch (e) {
+      throw ApiException(message: 'Failed to send OTP: $e');
+    }
+  }
+
+  /// Verifies an OTP for the given mobile number.
+  Future<bool> verifyOtp(String mobile, String otp) async {
+    try {
+      final data = await _httpHelper.post(
+        '$baseUrl/staff/verify-otp',
+        body: {
+          'mobile': mobile,
+          'otp': otp,
+        },
+      );
+      return data['success'] ?? false;
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to verify OTP: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
+    } catch (e) {
+      throw ApiException(message: 'Failed to verify OTP: $e');
+    }
+  }
+
+  /// Verifies a staff member's identity.
+  Future<bool> verifyStaffIdentity(int staffId, Map<String, dynamic> data) async {
+    try {
+      final response = await _httpHelper.put(
+        '$baseUrl/staff/$staffId/verify',
+        body: data,
+      );
+      return response['success'] ?? false;
+    } on ApiException catch (e) {
+      throw ApiException(
+        message: 'Failed to verify staff identity: ${e.message}',
+        statusCode: e.statusCode,
+        endpoint: e.endpoint,
+        data: e.data,
+      );
+    } catch (e) {
+      throw ApiException(message: 'Failed to verify staff identity: $e');
     }
   }
 }

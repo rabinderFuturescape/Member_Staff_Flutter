@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'staff/staff_list_screen.dart';
 import 'settings/settings_screen.dart';
+import 'staff/staff_verification_flow/staff_verification_flow.dart';
 
 /// The home screen of the application.
 class HomeScreen extends StatelessWidget {
@@ -58,10 +59,13 @@ class HomeScreen extends StatelessWidget {
           ),
           _buildFeatureCard(
             context,
-            'Member Management',
-            Icons.person,
+            'Verify Staff',
+            Icons.verified_user,
             Colors.green,
-            () {}, // TODO: Implement member management
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const StaffVerificationFlow()),
+            ),
           ),
           _buildFeatureCard(
             context,
