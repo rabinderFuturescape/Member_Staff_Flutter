@@ -1,18 +1,12 @@
-# Member Staff Feature
+# Member Staff Flutter Application
 
-This project implements member and staff features for the OneApp application.
+This is a Flutter application for managing members and staff.
+
+## Overview
+This application provides functionality to manage members and staff information, including:
+- Member registration and management
+- Staff registration and management
+- User authentication and authorization
 
 ## Getting Started
-
-Instructions for setting up and running the project will be added here.
-
-## Features
-
-- Member management
-- Staff management
-- User authentication
-- Role-based access control
-
-## Contributing
-
-Guidelines for contributing to this project will be added here.
+More details will be added as the project progresses.
