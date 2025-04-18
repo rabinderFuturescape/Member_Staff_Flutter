@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\TimeSlotController;
 use App\Http\Controllers\MemberStaffController;
+use App\Http\Controllers\API\MemberStaffBookingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -48,4 +49,7 @@ Route::middleware(['verify.jwt', 'verify.member.context'])->group(function () {
     Route::post('/member-staff/unassign', [MemberStaffController::class, 'unassignStaff']);
     Route::get('/company/{companyId}/staff', [MemberStaffController::class, 'getCompanyStaff']);
     Route::get('/staff/search', [MemberStaffController::class, 'searchStaff']);
+
+    // Include Member Staff Booking routes
+    require __DIR__.'/api_routes_member_staff_booking.php';
 });

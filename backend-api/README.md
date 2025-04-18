@@ -110,6 +110,13 @@ php artisan serve
 - `GET /api/company/{companyId}/staff` - Get all staff for a company
 - `GET /api/staff/search` - Search for staff
 
+### Member-Staff Booking
+
+- `GET /api/member-staff/bookings` - Get all bookings for a member
+- `POST /api/member-staff/booking` - Create a new booking
+- `PUT /api/member-staff/booking/{id}` - Update a booking (reschedule)
+- `DELETE /api/member-staff/booking/{id}` - Delete a booking (cancel)
+
 ## Authentication
 
 All protected endpoints require a valid JWT token in the Authorization header:
@@ -161,6 +168,8 @@ The API includes the following models:
 - `Unit` - Represents a unit
 - `MemberStaffAssignment` - Represents an assignment of a staff to a member
 - `Otp` - Represents an OTP for mobile verification
+- `MemberStaffBooking` - Represents a booking made by a member for staff services
+- `BookingSlot` - Represents a time slot within a booking
 
 ### Controllers
 
@@ -170,6 +179,7 @@ The API includes the following controllers:
 - `StaffController` - Handles staff management
 - `TimeSlotController` - Handles schedule management
 - `MemberStaffController` - Handles member-staff assignments
+- `MemberStaffBookingController` - Handles member staff bookings
 
 ## License
 

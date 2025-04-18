@@ -1,11 +1,12 @@
 # Member Staff Flutter Application
 
-A Flutter application for managing members and staff information efficiently.
+A Flutter application for managing members, staff information, and bookings efficiently.
 
 ## Overview
 This application provides functionality to manage members and staff information, including:
 - Member registration and management
 - Staff registration and management
+- Staff booking and scheduling
 - User authentication and authorization
 - Reporting and analytics
 
@@ -35,6 +36,8 @@ member_staff_app/
 
 - **Member Management**: Add, edit, view, and delete member information
 - **Staff Management**: Add, edit, view, and delete staff information
+- **Staff Booking**: Book staff services with hourly time slots
+- **Scheduling**: View and manage staff schedules with calendar integration
 - **Authentication**: Secure login and role-based access control
 - **Reporting**: Generate reports on member and staff data
 
@@ -75,6 +78,17 @@ This project follows clean architecture principles and is organized into layers:
 - **Presentation Layer**: UI components (screens, widgets)
 - **Domain Layer**: Business logic and models
 - **Data Layer**: API services and repositories
+
+## Backend API
+
+The application connects to a Laravel backend API that provides:
+
+- Member and staff management endpoints
+- Authentication and authorization
+- Booking and scheduling functionality
+- Data persistence with MySQL
+
+API documentation is available in the `member_staff_booking_api_spec.yaml` file.
 
 ## Testing
 

@@ -1,0 +1,536 @@
+openapi: 3.0.3
+info:
+  title: Member Staff Booking API
+  description: |
+    API for managing Member Staff Booking in the OneApp application.
+    This API allows members to search for staff, check availability, and book staff services.
+  version: 1.0.0
+  contact:
+    name: OneApp Development Team
+    email: dev@oneapp.example.com
+
+servers:
+  - url: https://api.oneapp.in/api
+    description: Production server
+  - url: https://staging-api.oneapp.in/api
+    description: Staging server
+  - url: https://dev-api.oneapp.in/api
+    description: Development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from the parent OneApp authentication (OneSSO)
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+          description: Error status
+        code:
+          type: integer
+          description: HTTP status code
+        message:
+          type: string
+          description: Error message
+        details:
+          type: object
+          description: Additional error details
+      required:
+        - status
+        - message
+
+    MemberStaff:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the staff
+        name:
+          type: string
+          description: Full name of the staff
+        mobile:
+          type: string
+          pattern: '^[0-9]{12}$'
+          description: Mobile number with country code (e.g., 917411122233)
+        category:
+          type: string
+          description: Category of the staff (e.g., "Domestic Help", "Driver")
+        is_verified:
+          type: boolean
+          description: Whether the staff is verified
+        primary_working_hours:
+          type: string
+          description: Primary working hours of the staff (e.g., "8:00 AM - 5:00 PM")
+        photo_url:
+          type: string
+          format: uri
+          description: URL to the staff's photo
+      required:
+        - id
+        - name
+        - category
+        - is_verified
+
+    HourlyAvailability:
+      type: object
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          description: Hour of the day (0-23)
+        is_booked:
+          type: boolean
+          description: Whether the hour is already booked
+      required:
+        - hour
+        - is_booked
+
+    BookingRequest:
+      type: object
+      properties:
+        staff_id:
+          type: integer
+          description: ID of the staff to book
+        member_id:
+          type: integer
+          description: ID of the member making the booking
+        unit_id:
+          type: integer
+          description: ID of the member's unit
+        company_id:
+          type: integer
+          description: ID of the member's company
+        start_date:
+          type: string
+          format: date
+          description: Start date of the booking (YYYY-MM-DD)
+        end_date:
+          type: string
+          format: date
+          description: End date of the booking (YYYY-MM-DD)
+        repeat_type:
+          type: string
+          enum: [once, daily, weekly, custom]
+          description: Type of repeat for the booking
+        slot_hours:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+            maximum: 23
+          description: Hours of the day to book (0-23)
+        notes:
+          type: string
+          description: Additional notes for the booking
+      required:
+        - staff_id
+        - member_id
+        - unit_id
+        - company_id
+        - start_date
+        - repeat_type
+        - slot_hours
+
+    BookingResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+          description: Status of the booking request
+        booking_id:
+          type: integer
+          description: ID of the created booking
+      required:
+        - status
+        - booking_id
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the booking
+        member_id:
+          type: integer
+          description: ID of the member who made the booking
+        staff_id:
+          type: integer
+          description: ID of the staff who was booked
+        start_date:
+          type: string
+          format: date
+          description: Start date of the booking
+        end_date:
+          type: string
+          format: date
+          description: End date of the booking
+        repeat_type:
+          type: string
+          enum: [once, daily, weekly, custom]
+          description: Type of repeat for the booking
+        notes:
+          type: string
+          description: Additional notes for the booking
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled, completed]
+          description: Status of the booking
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp when the booking was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the booking was last updated
+        slots:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookingSlot'
+          description: Slots included in this booking
+      required:
+        - id
+        - member_id
+        - staff_id
+        - start_date
+        - repeat_type
+        - status
+        - created_at
+        - updated_at
+
+    BookingSlot:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the booking slot
+        booking_id:
+          type: integer
+          description: ID of the booking this slot belongs to
+        date:
+          type: string
+          format: date
+          description: Date of the slot
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          description: Hour of the day (0-23)
+        is_confirmed:
+          type: boolean
+          description: Whether the slot is confirmed
+      required:
+        - id
+        - booking_id
+        - date
+        - hour
+        - is_confirmed
+
+security:
+  - BearerAuth: []
+
+paths:
+  /member-staff/search:
+    get:
+      summary: Search for member staff
+      description: Search for member staff by name, mobile, category, and availability
+      operationId: searchMemberStaff
+      parameters:
+        - name: query
+          in: query
+          description: Search query (name or mobile)
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Category of staff (e.g., "Domestic Help", "Driver")
+          schema:
+            type: string
+        - name: availability_date
+          in: query
+          description: Filter by available date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MemberStaff'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      pages:
+                        type: integer
+                required:
+                  - data
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /member-staff/{staffId}/availability:
+    get:
+      summary: Get staff availability by hour
+      description: Get the hourly availability of a staff member for a specific date
+      operationId: getStaffAvailability
+      parameters:
+        - name: staffId
+          in: path
+          required: true
+          description: ID of the staff
+          schema:
+            type: integer
+        - name: date
+          in: query
+          description: Date to check availability (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HourlyAvailability'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Staff not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /member-staff/booking:
+    post:
+      summary: Submit a booking request
+      description: Submit a request to book a staff member for specific dates and times
+      operationId: submitBookingRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingRequest'
+      responses:
+        '200':
+          description: Booking request submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+        '400':
+          description: Invalid input or staff not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Staff not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /member-staff/bookings:
+    get:
+      summary: Get member's bookings
+      description: Get all bookings made by the authenticated member
+      operationId: getMemberBookings
+      parameters:
+        - name: status
+          in: query
+          description: Filter by booking status
+          schema:
+            type: string
+            enum: [pending, confirmed, cancelled, completed]
+        - name: page
+          in: query
+          description: Page number for pagination
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Booking'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      pages:
+                        type: integer
+                required:
+                  - data
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /member-staff/booking/{bookingId}:
+    get:
+      summary: Get booking details
+      description: Get details of a specific booking
+      operationId: getBookingDetails
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: ID of the booking
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Cancel a booking
+      description: Cancel a booking that is in pending or confirmed status
+      operationId: cancelBooking
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          description: ID of the booking to cancel
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                  message:
+                    type: string
+                    example: "Booking cancelled successfully"
+                required:
+                  - status
+                  - message
+        '400':
+          description: Booking cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
