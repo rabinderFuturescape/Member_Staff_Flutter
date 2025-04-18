@@ -5,40 +5,43 @@ import '../models/attendance.dart';
 import '../services/attendance_service.dart';
 
 class StaffAttendanceScreen extends StatefulWidget {
-  const StaffAttendanceScreen({Key? key}) : super(key: key);
+  final AttendanceService? attendanceService;
+
+  const StaffAttendanceScreen({Key? key, this.attendanceService}) : super(key: key);
 
   @override
   State<StaffAttendanceScreen> createState() => _StaffAttendanceScreenState();
 }
 
 class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
-  final AttendanceService _attendanceService = AttendanceService();
-  
+  late final AttendanceService _attendanceService;
+
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
-  
+
   Map<DateTime, DayAttendanceStatus> _attendanceData = {};
   List<StaffAttendance> _selectedDayStaff = [];
   Map<String, StaffAttendance> _updatedAttendances = {};
-  
+
   bool _isLoading = false;
   bool _isSaving = false;
-  
+
   @override
   void initState() {
     super.initState();
+    _attendanceService = widget.attendanceService ?? AttendanceService();
     _loadAttendanceData();
   }
-  
+
   Future<void> _loadAttendanceData() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final attendanceMap = await _attendanceService.getAttendanceData(_focusedDay);
-      
+
       setState(() {
         _attendanceData = attendanceMap;
         _isLoading = false;
@@ -48,18 +51,18 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load attendance data: $e')),
       );
     }
   }
-  
+
   void _updateSelectedDayStaff() async {
     try {
       // Check if we have attendance data for the selected day
       final normalizedDay = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-      
+
       if (_attendanceData.containsKey(normalizedDay)) {
         // Use existing attendance data
         final dayStatus = _attendanceData[normalizedDay]!;
@@ -70,10 +73,10 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       } else {
         // Get mock staff data
         final mockStaff = await _attendanceService.getMockStaffData();
-        
+
         setState(() {
           _selectedDayStaff = mockStaff;
-          
+
           // Initialize updated attendances
           _updatedAttendances = {};
           for (final staff in _selectedDayStaff) {
@@ -87,7 +90,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       );
     }
   }
-  
+
   Future<void> _saveAttendance() async {
     if (_updatedAttendances.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -95,28 +98,28 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       );
       return;
     }
-    
+
     setState(() {
       _isSaving = true;
     });
-    
+
     try {
       await _attendanceService.saveAttendance(
         date: _selectedDay,
         attendances: _updatedAttendances.values.toList(),
       );
-      
+
       // Update local data
       final normalizedDay = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
       _attendanceData[normalizedDay] = DayAttendanceStatus(
         date: normalizedDay,
         staffAttendances: Map.from(_updatedAttendances),
       );
-      
+
       setState(() {
         _isSaving = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Attendance saved successfully')),
       );
@@ -124,43 +127,43 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
       setState(() {
         _isSaving = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save attendance: $e')),
       );
     }
   }
-  
+
   Future<void> _takePicture(String staffId) async {
     final photoUrl = await _attendanceService.takePhoto();
-    
+
     if (photoUrl != null) {
       setState(() {
         final staff = _updatedAttendances[staffId]!;
         _updatedAttendances[staffId] = staff.copyWith(photoUrl: photoUrl);
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Photo captured successfully')),
       );
     }
   }
-  
+
   void _updateAttendanceStatus(String staffId, String status) {
     setState(() {
       final staff = _updatedAttendances[staffId]!;
       _updatedAttendances[staffId] = staff.copyWith(status: status);
     });
   }
-  
+
   void _addNote(String staffId) async {
     final TextEditingController noteController = TextEditingController();
     final staff = _updatedAttendances[staffId]!;
-    
+
     if (staff.note != null) {
       noteController.text = staff.note!;
     }
-    
+
     final note = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -184,24 +187,24 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
         ],
       ),
     );
-    
+
     if (note != null) {
       setState(() {
         _updatedAttendances[staffId] = staff.copyWith(note: note);
       });
     }
   }
-  
+
   List<Event> _getEventsForDay(DateTime day) {
     final normalizedDay = DateTime(day.year, day.month, day.day);
-    
+
     if (_attendanceData.containsKey(normalizedDay)) {
       return [Event(_attendanceData[normalizedDay]!.overallStatus)];
     }
-    
+
     return [];
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -258,9 +261,9 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                   setState(() {
                     _focusedDay = focusedDay;
                   });
-                  
+
                   // Load data for the new month
-                  if (_focusedDay.month != _selectedDay.month || 
+                  if (_focusedDay.month != _selectedDay.month ||
                       _focusedDay.year != _selectedDay.year) {
                     _loadAttendanceData();
                   }
@@ -268,10 +271,10 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, date, events) {
                     if (events.isEmpty) return null;
-                    
+
                     final event = events.first as Event;
                     Color markerColor;
-                    
+
                     switch (event.title) {
                       case 'present':
                         markerColor = Colors.green;
@@ -285,7 +288,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                       default:
                         return null;
                     }
-                    
+
                     return Positioned(
                       bottom: 1,
                       child: Container(
@@ -302,7 +305,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
               ),
             ),
           ),
-          
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -325,7 +328,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
               ],
             ),
           ),
-          
+
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -339,7 +342,7 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
                         itemBuilder: (context, index) {
                           final staffId = _selectedDayStaff[index].staffId;
                           final staff = _updatedAttendances[staffId]!;
-                          
+
                           return Card(
                             margin: const EdgeInsets.only(bottom: 16),
                             shape: RoundedRectangleBorder(
@@ -534,6 +537,6 @@ class _StaffAttendanceScreenState extends State<StaffAttendanceScreen> {
 
 class Event {
   final String title;
-  
+
   const Event(this.title);
 }

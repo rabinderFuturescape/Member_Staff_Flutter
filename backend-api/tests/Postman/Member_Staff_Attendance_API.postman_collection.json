@@ -1,0 +1,51 @@
+{
+  "info": {
+    "name": "Member Staff Attendance API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Submit Member Staff Attendance",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/member-staff/attendance",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "member-staff",
+            "attendance"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"member_id\": 12,\n  \"unit_id\": 3,\n  \"date\": \"2025-04-21\",\n  \"entries\": [\n    {\n      \"staff_id\": 1002,\n      \"status\": \"present\",\n      \"note\": \"On time\",\n      \"photo_url\": \"https://s3.bucket/path/photo.jpg\"\n    },\n    {\n      \"staff_id\": 1003,\n      \"status\": \"absent\",\n      \"note\": \"No show\"\n    }\n  ]\n}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
