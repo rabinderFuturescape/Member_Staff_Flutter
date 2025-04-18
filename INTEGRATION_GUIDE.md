@@ -68,6 +68,7 @@ The Member Staff module is designed to be embedded within the OneApp as a micro-
 - Staff verification (mobile verification, OTP, identity capture)
 - Staff schedule management
 - Member-staff assignments
+- Staff rating and feedback system
 
 This module is built with Flutter and connects to a Laravel API backend. It leverages the parent OneApp's authentication system and ensures that all API requests include the necessary member context information.
 
@@ -453,6 +454,56 @@ The migrations will create the following tables:
 - `{prefix}member_staff_bookings` - Stores staff booking information
 - `{prefix}booking_slots` - Stores individual booking time slots
 - `{prefix}member_staff_attendance` - Stores staff attendance records
+- `{prefix}staff_ratings` - Stores staff ratings and feedback
+
+## Staff Rating System
+
+The Member Staff module includes a comprehensive rating system that allows members to rate both society staff and member staff.
+
+### Rating Features
+
+- 1-5 star rating scale
+- Optional feedback text
+- Monthly rating restriction (one rating per staff per month)
+- Rating summaries with averages and distribution
+- Admin dashboard for monitoring ratings
+
+### Rating API Endpoints
+
+- `POST /api/staff/rating` - Submit a new rating
+- `GET /api/staff/{staffId}/ratings` - Get ratings summary for a staff member
+- `GET /api/admin/staff/ratings` - Get all ratings (admin only)
+- `GET /api/admin/staff/ratings/export` - Export ratings as CSV (admin only)
+
+### Rating UI Components
+
+- `StaffRatingDialog` - Dialog for submitting ratings
+- `StaffRatingSummary` - Widget for displaying rating summaries
+- `StaffProfileScreen` - Screen that includes rating functionality
+- Admin dashboard with filtering and export capabilities
+
+### Rating Integration
+
+To integrate the rating system, ensure the following:
+
+1. The `flutter_rating_bar` package is included in your dependencies
+2. The staff rating API endpoints are properly configured
+3. The staff rating database table is created through migrations
+4. The rating UI components are accessible from your app's navigation
+
+### Rating UI Screens
+
+#### Staff Rating Screen
+
+![Staff Rating Screen](assets/images/staff_rating_screen.svg)
+
+#### Staff Rating Summary
+
+![Staff Rating Summary](assets/images/staff_rating_summary.svg)
+
+#### Admin Rating Dashboard
+
+![Admin Rating Dashboard](assets/images/admin_rating_dashboard.svg)
 
 ## UI Integration
 

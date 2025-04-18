@@ -40,7 +40,8 @@ member_staff_app/
 - **Staff Booking**: Book staff services with hourly time slots
 - **Scheduling**: View and manage staff schedules with calendar integration
 - **Attendance Tracking**: Mark staff attendance with photo proof and notes
-- **Admin Dashboard**: Real-time monitoring of staff attendance with WebSockets integration
+- **Staff Rating System**: Rate society staff and member staff with 1-5 stars and feedback
+- **Admin Dashboard**: Real-time monitoring of staff attendance and ratings with WebSockets integration
 - **Authentication**: Secure login and role-based access control
 - **Reporting**: Generate reports on member and staff data
 
@@ -97,6 +98,7 @@ API documentation is available in the following OpenAPI specification files:
 - `member_staff_booking_api_spec.yaml` - Booking API endpoints
 - `member_staff_attendance_api_spec.yaml` - Attendance API endpoints
 - `admin_attendance_api_spec.yaml` - Admin dashboard API endpoints
+- `staff_rating_api_spec.yaml` - Staff rating API endpoints
 
 ## Testing
 
