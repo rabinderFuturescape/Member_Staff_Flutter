@@ -103,6 +103,14 @@ class Staff extends Model
     }
 
     /**
+     * Get the attendance records for the staff.
+     */
+    public function attendanceRecords()
+    {
+        return $this->hasMany(MemberStaffAttendance::class);
+    }
+
+    /**
      * Scope a query to only include society staff.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query

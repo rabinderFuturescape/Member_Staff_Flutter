@@ -1,0 +1,232 @@
+openapi: 3.0.0
+info:
+  title: Member Staff Admin Attendance API
+  description: API for managing member staff attendance records in the admin dashboard
+  version: 1.0.0
+  
+servers:
+  - url: https://api.oneapp.in/api
+    description: Production server
+  - url: http://localhost:8000/api
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    AttendanceRecord:
+      type: object
+      properties:
+        staff_id:
+          type: integer
+          description: ID of the staff member
+        staff_name:
+          type: string
+          description: Name of the staff member
+        staff_category:
+          type: string
+          description: Category of the staff (e.g., Domestic Help, Cook)
+        staff_photo:
+          type: string
+          nullable: true
+          description: URL to the staff member's photo
+        status:
+          type: string
+          enum: [present, absent, not_marked]
+          description: Attendance status
+        note:
+          type: string
+          nullable: true
+          description: Optional note about the attendance
+        photo_url:
+          type: string
+          nullable: true
+          description: URL to the attendance proof photo
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp of the last update
+    
+    AttendanceResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceRecord'
+        total:
+          type: integer
+          description: Total number of records matching the query
+        page:
+          type: integer
+          description: Current page number
+        limit:
+          type: integer
+          description: Number of records per page
+        totalPages:
+          type: integer
+          description: Total number of pages
+    
+    AttendanceSummary:
+      type: object
+      properties:
+        present:
+          type: integer
+          description: Number of staff marked as present
+        absent:
+          type: integer
+          description: Number of staff marked as absent
+        not_marked:
+          type: integer
+          description: Number of staff not marked
+        total:
+          type: integer
+          description: Total number of staff
+    
+    AttendanceUpdateRequest:
+      type: object
+      required:
+        - attendance_id
+        - status
+      properties:
+        attendance_id:
+          type: integer
+          description: ID of the attendance record to update
+        status:
+          type: string
+          enum: [present, absent, not_marked]
+          description: New attendance status
+        note:
+          type: string
+          nullable: true
+          description: Optional note about the attendance
+    
+    AttendanceUpdateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success, error]
+          description: Status of the update operation
+        message:
+          type: string
+          description: Message describing the result
+        attendance:
+          $ref: '#/components/schemas/AttendanceRecord'
+
+paths:
+  /admin/attendance:
+    get:
+      summary: Get attendance records
+      description: Retrieves attendance records with filtering and pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Date to get attendance for (YYYY-MM-DD)
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [present, absent, not_marked]
+          description: Filter by attendance status
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Search term for staff name
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+          description: Number of records per page
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - User does not have admin access
+        '422':
+          description: Validation error - Invalid parameters
+  
+  /admin/attendance/summary:
+    get:
+      summary: Get attendance summary
+      description: Retrieves summary statistics for attendance on a specific date
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Date to get summary for (YYYY-MM-DD)
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceSummary'
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - User does not have admin access
+        '422':
+          description: Validation error - Invalid parameters
+  
+  /admin/attendance/update:
+    post:
+      summary: Update attendance status
+      description: Updates the status of an attendance record and broadcasts the change
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceUpdateRequest'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceUpdateResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - User does not have admin access
+        '404':
+          description: Not found - Attendance record not found
+        '422':
+          description: Validation error - Invalid parameters

@@ -21,5 +21,10 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('create-booking', [MemberStaffBookingPolicy::class, 'createBooking']);
         Gate::define('reschedule-booking', [MemberStaffBookingPolicy::class, 'rescheduleBooking']);
         Gate::define('cancel-booking', [MemberStaffBookingPolicy::class, 'cancelBooking']);
+
+        // Admin dashboard access gate
+        Gate::define('view-admin-dashboard', function ($user) {
+            return $user->role === 'admin';
+        });
     }
 }
