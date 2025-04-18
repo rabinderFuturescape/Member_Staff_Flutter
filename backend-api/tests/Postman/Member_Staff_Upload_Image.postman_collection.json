@@ -1,0 +1,63 @@
+{
+  "info": {
+    "name": "Member Staff Image Upload",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload Attendance Photo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "photo",
+              "type": "file",
+              "src": "",
+              "description": "Upload a JPEG or PNG image",
+              "disabled": false
+            },
+            {
+              "key": "member_id",
+              "value": "12",
+              "type": "text"
+            },
+            {
+              "key": "unit_id",
+              "value": "3",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/upload-photo",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "upload-photo"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ]
+}
