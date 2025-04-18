@@ -56,4 +56,5 @@ Route::middleware(['verify.jwt', 'verify.member.context'])->group(function () {
 
     // Include Member Staff Attendance routes
     require __DIR__.'/api_routes_member_staff_attendance.php';
+    require __DIR__.'/member_staff_attendance_routes.php';
 });

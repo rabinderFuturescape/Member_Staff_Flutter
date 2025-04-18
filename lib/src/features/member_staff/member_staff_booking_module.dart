@@ -3,7 +3,7 @@ import 'screens/member_staff_search_screen.dart';
 import 'screens/booking_list_screen.dart';
 import 'screens/member_staff_booking_screen.dart';
 import 'screens/calendar_booking_screen.dart';
-import 'screens/staff_attendance_screen.dart';
+import 'screens/staff_attendance_screen_with_service.dart';
 
 /// Module for Member Staff Booking feature
 class MemberStaffBookingModule {

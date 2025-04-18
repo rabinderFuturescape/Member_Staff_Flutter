@@ -66,6 +66,12 @@ The `MemberStaffAttendanceApi` class provides methods for:
 - Getting attendance records for a month
 - Saving attendance records for a date
 
+The `AttendanceService` class provides a higher-level interface for:
+- Loading attendance data for a month
+- Saving attendance records
+- Taking photos for attendance proof
+- Getting mock staff data for testing
+
 The API connects to a Laravel backend that handles data persistence and business logic.
 
 ## Data Models
