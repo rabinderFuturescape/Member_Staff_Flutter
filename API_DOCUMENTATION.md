@@ -10,9 +10,10 @@ This document provides a comprehensive overview of all API endpoints used in the
 4. [Schedule Management](#schedule-management)
 5. [Member-Staff Assignment](#member-staff-assignment)
 6. [Admin Dashboard](#admin-dashboard)
-7. [Error Handling](#error-handling)
-8. [API Client](#api-client)
-9. [API Models](#api-models)
+7. [Staff Rating](#staff-rating)
+8. [Error Handling](#error-handling)
+9. [API Client](#api-client)
+10. [API Models](#api-models)
 
 ## Base URL
 
@@ -844,6 +845,134 @@ Updates the status of an attendance record and broadcasts the change via WebSock
   }
 }
 ```
+
+## Staff Rating
+
+### Submit Rating
+
+**Endpoint**: `POST /staff/rating`
+
+Submits a rating for a staff member.
+
+**Request Body**:
+```json
+{
+  "member_id": 12,
+  "staff_id": 1003,
+  "staff_type": "member",
+  "rating": 4,
+  "feedback": "Very punctual and polite"
+}
+```
+
+**Response**:
+```json
+{
+  "message": "Rating submitted successfully.",
+  "rating": {
+    "id": 1,
+    "member_id": 12,
+    "staff_id": 1003,
+    "staff_type": "member",
+    "rating": 4,
+    "feedback": "Very punctual and polite",
+    "created_at": "2023-11-20T12:00:00.000Z",
+    "updated_at": "2023-11-20T12:00:00.000Z"
+  }
+}
+```
+
+### Get Ratings Summary
+
+**Endpoint**: `GET /staff/{staff_id}/ratings`
+
+**Query Parameters**:
+- `staff_type`: The type of staff ("society" or "member") (required)
+
+Gets a summary of ratings for a staff member.
+
+**Response**:
+```json
+{
+  "staff_id": 1003,
+  "staff_type": "member",
+  "average_rating": 4.2,
+  "total_ratings": 18,
+  "rating_distribution": {
+    "1": 1,
+    "2": 2,
+    "3": 3,
+    "4": 5,
+    "5": 7
+  },
+  "recent_reviews": [
+    {
+      "rating": 5,
+      "feedback": "Great service!",
+      "member_name": "Asha",
+      "created_at": "2023-11-19T10:30:00.000Z"
+    },
+    {
+      "rating": 4,
+      "feedback": "Very punctual and polite",
+      "member_name": "Rahul",
+      "created_at": "2023-11-18T14:45:00.000Z"
+    }
+  ]
+}
+```
+
+### Get All Ratings (Admin)
+
+**Endpoint**: `GET /admin/staff/ratings`
+
+**Query Parameters**:
+- `staff_type`: Filter by staff type ("society" or "member") (optional)
+- `min_rating`: Minimum rating value (1-5) (optional)
+- `max_rating`: Maximum rating value (1-5) (optional)
+- `page`: Page number (default: 1) (optional)
+- `limit`: Number of ratings per page (default: 10) (optional)
+
+Gets all ratings with filtering and pagination (admin only).
+
+**Response**:
+```json
+{
+  "total": 50,
+  "page": 1,
+  "limit": 10,
+  "ratings": [
+    {
+      "id": 1,
+      "member_id": 12,
+      "staff_id": 1003,
+      "staff_type": "member",
+      "rating": 4,
+      "feedback": "Very punctual and polite",
+      "created_at": "2023-11-20T12:00:00.000Z",
+      "updated_at": "2023-11-20T12:00:00.000Z",
+      "member": {
+        "id": 12,
+        "name": "Rahul"
+      }
+    },
+    // More ratings...
+  ]
+}
+```
+
+### Export Ratings (Admin)
+
+**Endpoint**: `GET /admin/staff/ratings/export`
+
+**Query Parameters**:
+- `staff_type`: Filter by staff type ("society" or "member") (optional)
+- `min_rating`: Minimum rating value (1-5) (optional)
+- `max_rating`: Maximum rating value (1-5) (optional)
+
+Exports ratings as a CSV file (admin only).
+
+**Response**: CSV file
 
 ## Error Handling
 

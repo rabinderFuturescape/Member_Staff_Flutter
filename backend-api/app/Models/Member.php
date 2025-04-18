@@ -98,6 +98,14 @@ class Member extends Model
     }
 
     /**
+     * Get the staff ratings submitted by this member.
+     */
+    public function staffRatings()
+    {
+        return $this->hasMany(StaffRating::class);
+    }
+
+    /**
      * Scope a query to only include active members.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query

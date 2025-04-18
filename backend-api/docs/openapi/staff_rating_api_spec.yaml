@@ -1,0 +1,310 @@
+openapi: 3.0.0
+info:
+  title: Staff Rating API
+  description: API for rating society staff and member staff
+  version: 1.0.0
+  
+servers:
+  - url: https://api.oneapp.in/api
+    description: Production server
+  - url: http://localhost:8000/api
+    description: Local development server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    StaffRating:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique identifier for the rating
+        member_id:
+          type: integer
+          description: ID of the member who submitted the rating
+        staff_id:
+          type: integer
+          description: ID of the staff being rated
+        staff_type:
+          type: string
+          enum: [society, member]
+          description: Type of staff (society or member)
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Rating value (1-5)
+        feedback:
+          type: string
+          nullable: true
+          description: Optional feedback text
+        created_at:
+          type: string
+          format: date-time
+          description: Date and time when the rating was created
+        updated_at:
+          type: string
+          format: date-time
+          description: Date and time when the rating was last updated
+    
+    RatingSummary:
+      type: object
+      properties:
+        staff_id:
+          type: integer
+          description: ID of the staff
+        staff_type:
+          type: string
+          enum: [society, member]
+          description: Type of staff (society or member)
+        average_rating:
+          type: number
+          format: float
+          description: Average rating value
+        total_ratings:
+          type: integer
+          description: Total number of ratings
+        rating_distribution:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Distribution of ratings (key is rating value, value is count)
+        recent_reviews:
+          type: array
+          items:
+            type: object
+            properties:
+              rating:
+                type: integer
+                description: Rating value
+              feedback:
+                type: string
+                nullable: true
+                description: Feedback text
+              member_name:
+                type: string
+                description: Name of the member who submitted the rating
+              created_at:
+                type: string
+                format: date-time
+                description: Date and time when the rating was created
+    
+    RatingSubmitRequest:
+      type: object
+      required:
+        - member_id
+        - staff_id
+        - staff_type
+        - rating
+      properties:
+        member_id:
+          type: integer
+          description: ID of the member submitting the rating
+        staff_id:
+          type: integer
+          description: ID of the staff being rated
+        staff_type:
+          type: string
+          enum: [society, member]
+          description: Type of staff (society or member)
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Rating value (1-5)
+        feedback:
+          type: string
+          nullable: true
+          description: Optional feedback text
+    
+    RatingSubmitResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Success message
+        rating:
+          $ref: '#/components/schemas/StaffRating'
+    
+    AdminRatingsResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of ratings
+        page:
+          type: integer
+          description: Current page number
+        limit:
+          type: integer
+          description: Number of ratings per page
+        ratings:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffRating'
+
+paths:
+  /staff/rating:
+    post:
+      summary: Submit a rating for a staff member
+      description: Submit a new rating for a society staff or member staff
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RatingSubmitRequest'
+      responses:
+        '201':
+          description: Rating submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingSubmitResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - Member can only rate staff assigned to them
+        '422':
+          description: Validation error or member has already rated this staff in the last month
+  
+  /staff/{staffId}/ratings:
+    get:
+      summary: Get ratings summary for a staff member
+      description: Get a summary of ratings for a specific staff member
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: staffId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID of the staff member
+        - name: staff_type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [society, member]
+          description: Type of staff (society or member)
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RatingSummary'
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '404':
+          description: Staff not found
+  
+  /admin/staff/ratings:
+    get:
+      summary: Get all staff ratings (admin only)
+      description: Get all staff ratings with filtering and pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: staff_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [society, member]
+          description: Filter by staff type
+        - name: min_rating
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Minimum rating value
+        - name: max_rating
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Maximum rating value
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of ratings per page
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminRatingsResponse'
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - User is not an admin
+  
+  /admin/staff/ratings/export:
+    get:
+      summary: Export staff ratings as CSV (admin only)
+      description: Export all staff ratings as a CSV file
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: staff_type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [society, member]
+          description: Filter by staff type
+        - name: min_rating
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Minimum rating value
+        - name: max_rating
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+          description: Maximum rating value
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized - Invalid or missing token
+        '403':
+          description: Forbidden - User is not an admin

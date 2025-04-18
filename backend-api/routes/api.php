@@ -64,4 +64,7 @@ Route::middleware(['verify.jwt', 'verify.member.context'])->group(function () {
 
     // Include Admin routes
     require __DIR__.'/api_routes_admin.php';
+
+    // Include Staff Rating routes
+    require __DIR__.'/api_routes_staff_rating.php';
 });

@@ -111,6 +111,15 @@ class Staff extends Model
     }
 
     /**
+     * Get the ratings for the staff.
+     */
+    public function ratings()
+    {
+        return $this->hasMany(StaffRating::class, 'staff_id')
+            ->where('staff_type', 'member');
+    }
+
+    /**
      * Scope a query to only include society staff.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
