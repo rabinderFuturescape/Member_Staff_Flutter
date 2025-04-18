@@ -2,6 +2,52 @@
 
 This guide provides detailed instructions for integrating the Member Staff module into the parent OneApp application.
 
+## Module Screens
+
+### Member Staff Landing Screen
+
+![Member Staff Landing Screen](assets/images/member_staff_landing_screen.svg)
+
+#### Key Features
+
+1. **Search Functionality**: Search bar to find staff by name or category
+2. **Category Filters**: Quick filters for different staff categories (Cook, Domestic Help, Driver, Security)
+3. **Staff Cards**: Visual cards showing staff information with profile pictures
+4. **Action Buttons**: Direct access to booking and attendance tracking
+5. **Bottom Navigation**: Easy navigation between different sections of the app
+
+### Admin Dashboard Screen
+
+![Admin Dashboard Screen](assets/images/admin_dashboard_screen.svg)
+
+#### Key Features
+
+1. **Navigation Sidebar**: Quick access to different admin functions
+2. **Date Selector**: View attendance for specific dates
+3. **Status Filter**: Filter by attendance status (Present, Absent, Not Marked)
+4. **Real-time Updates**: Indicator showing real-time data synchronization
+5. **Staff Attendance Table**: Comprehensive view of staff attendance records
+6. **Attendance Photos**: View photo proof of attendance
+7. **Pagination**: Navigate through multiple pages of records
+8. **Summary Cards**: Quick statistics showing attendance counts
+
+### Attendance Tracking Screen
+
+![Attendance Tracking Screen](assets/images/attendance_tracking_screen.svg)
+
+#### Key Features
+
+1. **Monthly Calendar View**: Visual calendar showing the entire month
+2. **Attendance Status Indicators**: Color-coded indicators showing attendance status for each day
+   - Green: Present
+   - Red: Absent
+   - No indicator: Not marked
+3. **Date Selection**: Ability to select a specific date to mark attendance
+4. **Staff Information**: Display of staff details for the selected staff member
+5. **Attendance Form**: Simple form to mark attendance as present or absent
+6. **Photo Proof**: Option to take a photo as proof of attendance
+7. **Submit Button**: Button to submit the attendance record
+
 ## Table of Contents
 
 1. [Overview](#overview)

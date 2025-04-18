@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="#f5f7fa" />
+  
+  <!-- App Bar -->
+  <rect width="800" height="64" fill="#1a73e8" />
+  <text x="72" y="40" font-family="Arial" font-size="20" font-weight="bold" fill="white">Member Staff</text>
+  
+  <!-- Back Button -->
+  <circle cx="36" cy="32" r="20" fill="#1a73e8" stroke="white" stroke-width="2" />
+  <path d="M42,32 L30,32 M30,32 L36,26 M30,32 L36,38" stroke="white" stroke-width="2" fill="none" />
+  
+  <!-- Search Bar -->
+  <rect x="40" y="84" width="720" height="56" rx="8" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <text x="80" y="120" font-family="Arial" font-size="16" fill="#9e9e9e">Search staff by name or category...</text>
+  <circle cx="60" cy="112" r="12" stroke="#9e9e9e" stroke-width="2" fill="none" />
+  <line x1="68" y1="120" x2="74" y2="126" stroke="#9e9e9e" stroke-width="2" />
+  
+  <!-- Filter Chips -->
+  <rect x="40" y="160" width="100" height="36" rx="18" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1" />
+  <text x="90" y="182" font-family="Arial" font-size="14" fill="#1a73e8" text-anchor="middle">All</text>
+  
+  <rect x="150" y="160" width="100" height="36" rx="18" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <text x="200" y="182" font-family="Arial" font-size="14" fill="#616161" text-anchor="middle">Cook</text>
+  
+  <rect x="260" y="160" width="140" height="36" rx="18" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <text x="330" y="182" font-family="Arial" font-size="14" fill="#616161" text-anchor="middle">Domestic Help</text>
+  
+  <rect x="410" y="160" width="100" height="36" rx="18" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <text x="460" y="182" font-family="Arial" font-size="14" fill="#616161" text-anchor="middle">Driver</text>
+  
+  <rect x="520" y="160" width="100" height="36" rx="18" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <text x="570" y="182" font-family="Arial" font-size="14" fill="#616161" text-anchor="middle">Security</text>
+  
+  <!-- Staff Cards -->
+  <!-- Card 1 -->
+  <rect x="40" y="216" width="350" height="160" rx="8" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <circle cx="100" cy="276" r="40" fill="#e8f0fe" />
+  <text x="100" y="284" font-family="Arial" font-size="24" fill="#1a73e8" text-anchor="middle">RS</text>
+  <text x="180" y="256" font-family="Arial" font-size="18" font-weight="bold" fill="#212121">Rahul Singh</text>
+  <text x="180" y="284" font-family="Arial" font-size="16" fill="#616161">Cook</text>
+  <rect x="180" y="296" width="80" height="32" rx="16" fill="#1a73e8" />
+  <text x="220" y="318" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Book</text>
+  <rect x="270" y="296" width="100" height="32" rx="16" fill="white" stroke="#1a73e8" stroke-width="1" />
+  <text x="320" y="318" font-family="Arial" font-size="14" fill="#1a73e8" text-anchor="middle">Attendance</text>
+  
+  <!-- Card 2 -->
+  <rect x="410" y="216" width="350" height="160" rx="8" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <circle cx="470" cy="276" r="40" fill="#e8f0fe" />
+  <text x="470" y="284" font-family="Arial" font-size="24" fill="#1a73e8" text-anchor="middle">PK</text>
+  <text x="550" y="256" font-family="Arial" font-size="18" font-weight="bold" fill="#212121">Priya Kumari</text>
+  <text x="550" y="284" font-family="Arial" font-size="16" fill="#616161">Domestic Help</text>
+  <rect x="550" y="296" width="80" height="32" rx="16" fill="#1a73e8" />
+  <text x="590" y="318" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Book</text>
+  <rect x="640" y="296" width="100" height="32" rx="16" fill="white" stroke="#1a73e8" stroke-width="1" />
+  <text x="690" y="318" font-family="Arial" font-size="14" fill="#1a73e8" text-anchor="middle">Attendance</text>
+  
+  <!-- Card 3 -->
+  <rect x="40" y="396" width="350" height="160" rx="8" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <circle cx="100" cy="456" r="40" fill="#e8f0fe" />
+  <text x="100" y="464" font-family="Arial" font-size="24" fill="#1a73e8" text-anchor="middle">AK</text>
+  <text x="180" y="436" font-family="Arial" font-size="18" font-weight="bold" fill="#212121">Amit Kumar</text>
+  <text x="180" y="464" font-family="Arial" font-size="16" fill="#616161">Driver</text>
+  <rect x="180" y="476" width="80" height="32" rx="16" fill="#1a73e8" />
+  <text x="220" y="498" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Book</text>
+  <rect x="270" y="476" width="100" height="32" rx="16" fill="white" stroke="#1a73e8" stroke-width="1" />
+  <text x="320" y="498" font-family="Arial" font-size="14" fill="#1a73e8" text-anchor="middle">Attendance</text>
+  
+  <!-- Card 4 -->
+  <rect x="410" y="396" width="350" height="160" rx="8" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  <circle cx="470" cy="456" r="40" fill="#e8f0fe" />
+  <text x="470" y="464" font-family="Arial" font-size="24" fill="#1a73e8" text-anchor="middle">SS</text>
+  <text x="550" y="436" font-family="Arial" font-size="18" font-weight="bold" fill="#212121">Suresh Singh</text>
+  <text x="550" y="464" font-family="Arial" font-size="16" fill="#616161">Security</text>
+  <rect x="550" y="476" width="80" height="32" rx="16" fill="#1a73e8" />
+  <text x="590" y="498" font-family="Arial" font-size="14" fill="white" text-anchor="middle">Book</text>
+  <rect x="640" y="476" width="100" height="32" rx="16" fill="white" stroke="#1a73e8" stroke-width="1" />
+  <text x="690" y="498" font-family="Arial" font-size="14" fill="#1a73e8" text-anchor="middle">Attendance</text>
+  
+  <!-- Bottom Navigation Bar -->
+  <rect y="560" width="800" height="40" fill="white" stroke="#e0e0e0" stroke-width="1" />
+  
+  <!-- Home Icon -->
+  <rect x="0" y="560" width="200" height="40" fill="white" />
+  <path d="M100,570 L120,570 L120,590 L100,590 Z" stroke="#9e9e9e" stroke-width="1.5" fill="none" />
+  <path d="M90,580 L110,565 L130,580" stroke="#9e9e9e" stroke-width="1.5" fill="none" />
+  <text x="100" y="590" font-family="Arial" font-size="10" fill="#9e9e9e" text-anchor="middle">Home</text>
+  
+  <!-- Staff Icon -->
+  <rect x="200" y="560" width="200" height="40" fill="#e8f0fe" />
+  <circle cx="300" cy="575" r="8" stroke="#1a73e8" stroke-width="1.5" fill="none" />
+  <path d="M290,585 L310,585" stroke="#1a73e8" stroke-width="1.5" fill="none" />
+  <path d="M285,595 L315,595" stroke="#1a73e8" stroke-width="1.5" fill="none" />
+  <text x="300" y="590" font-family="Arial" font-size="10" fill="#1a73e8" text-anchor="middle">Staff</text>
+  
+  <!-- Bookings Icon -->
+  <rect x="400" y="560" width="200" height="40" fill="white" />
+  <rect x="490" y="570" width="20" height="15" stroke="#9e9e9e" stroke-width="1.5" fill="none" />
+  <path d="M485,570 L485,565 L515,565 L515,570" stroke="#9e9e9e" stroke-width="1.5" fill="none" />
+  <line x1="495" y1="575" x2="505" y2="575" stroke="#9e9e9e" stroke-width="1.5" />
+  <line x1="495" y1="580" x2="500" y2="580" stroke="#9e9e9e" stroke-width="1.5" />
+  <text x="500" y="590" font-family="Arial" font-size="10" fill="#9e9e9e" text-anchor="middle">Bookings</text>
+  
+  <!-- Profile Icon -->
+  <rect x="600" y="560" width="200" height="40" fill="white" />
+  <circle cx="700" cy="575" r="10" stroke="#9e9e9e" stroke-width="1.5" fill="none" />
+  <circle cx="700" cy="570" r="3" stroke="#9e9e9e" stroke-width="1.5" fill="none" />
+  <path d="M690,585 C690,580 710,580 710,585" stroke="#9e9e9e" stroke-width="1.5" fill="none" />
+  <text x="700" y="590" font-family="Arial" font-size="10" fill="#9e9e9e" text-anchor="middle">Profile</text>
+</svg>
