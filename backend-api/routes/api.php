@@ -8,6 +8,7 @@ use App\Http\Controllers\TimeSlotController;
 use App\Http\Controllers\MemberStaffController;
 use App\Http\Controllers\API\MemberStaffBookingController;
 use App\Http\Controllers\API\MemberStaffAttendanceController;
+use App\Http\Controllers\API\UploadController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,4 +58,7 @@ Route::middleware(['verify.jwt', 'verify.member.context'])->group(function () {
     // Include Member Staff Attendance routes
     require __DIR__.'/api_routes_member_staff_attendance.php';
     require __DIR__.'/member_staff_attendance_routes.php';
+
+    // Include Upload routes
+    require __DIR__.'/api_routes_upload.php';
 });
