@@ -4,11 +4,11 @@ import { useRouter } from 'next/router';
 
 export default function Layout({ children }) {
   const router = useRouter();
-  
+
   const isActive = (path) => {
     return router.pathname === path ? 'bg-blue-700' : '';
   };
-  
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -23,6 +23,14 @@ export default function Layout({ children }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               Staff Attendance
+            </a>
+          </Link>
+          <Link href="/member-staff/attendance-realtime">
+            <a className={`flex items-center px-4 py-3 hover:bg-blue-700 ${isActive('/member-staff/attendance-realtime')}`}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Real-time Attendance
             </a>
           </Link>
           <Link href="/member-staff/bookings">
@@ -51,7 +59,7 @@ export default function Layout({ children }) {
           </Link>
         </nav>
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {children}

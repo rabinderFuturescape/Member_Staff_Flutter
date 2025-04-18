@@ -61,4 +61,7 @@ Route::middleware(['verify.jwt', 'verify.member.context'])->group(function () {
 
     // Include Upload routes
     require __DIR__.'/api_routes_upload.php';
+
+    // Include Admin routes
+    require __DIR__.'/api_routes_admin.php';
 });
