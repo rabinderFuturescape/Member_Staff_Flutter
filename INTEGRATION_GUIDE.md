@@ -144,7 +144,7 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         // Your existing providers
-        
+
         // Member Staff module providers
         Provider<ApiClient>(
           create: (_) => ApiClient(baseUrl: ApiConfig.memberStaffApiUrl),
@@ -184,10 +184,10 @@ import 'package:member_staff/src/features/member_staff/member_staff_module.dart'
 Future<void> navigateToMemberStaffModule(BuildContext context) async {
   // Get the authentication token from your app
   final String authToken = await yourAuthService.getToken();
-  
+
   // Save the token to the Member Staff module's TokenManager
   await TokenManager.saveAuthToken(authToken);
-  
+
   // Navigate to the Member Staff module
   Navigator.push(
     context,
@@ -209,9 +209,65 @@ Implement token refresh logic to ensure the Member Staff module always has a val
 Future<void> refreshToken() async {
   // Your token refresh logic
   final String newToken = await yourAuthService.refreshToken();
-  
+
   // Update the token in the Member Staff module
   await TokenManager.saveAuthToken(newToken);
+}
+```
+
+### 3. Decode and Use Member Context from JWT
+
+The Member Staff module needs to extract member context information from the JWT token:
+
+```dart
+import 'package:jwt_decoder/jwt_decoder.dart';
+
+class MemberContextExtractor {
+  static Map<String, dynamic> extractMemberContext(String token) {
+    try {
+      final Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+
+      return {
+        'member_id': decodedToken['member_id'],
+        'unit_id': decodedToken['unit_id'],
+        'company_id': decodedToken['company_id'],
+      };
+    } catch (e) {
+      print('Error decoding JWT token: $e');
+      return {};
+    }
+  }
+}
+```
+
+Use this context in API requests:
+
+```dart
+class ApiClient {
+  final String baseUrl;
+  final Future<String> Function() tokenProvider;
+
+  ApiClient({required this.baseUrl, required this.tokenProvider});
+
+  Future<http.Response> post(String endpoint, Map<String, dynamic> data) async {
+    final token = await tokenProvider();
+    final memberContext = MemberContextExtractor.extractMemberContext(token);
+
+    // Inject member context into all requests
+    final requestData = {
+      ...data,
+      ...memberContext,
+    };
+
+    return http.post(
+      Uri.parse('$baseUrl/$endpoint'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(requestData),
+    );
+  }
 }
 ```
 
@@ -229,7 +285,55 @@ Configure your API gateway or proxy to route requests to the Member Staff API:
 
 ### 2. API Authentication
 
-Ensure your API gateway forwards authentication headers to the Member Staff API.
+Ensure your API gateway forwards authentication headers to the Member Staff API. The Member Staff module expects the OneApp JWT token to be passed in the Authorization header.
+
+#### JWT Token Structure
+
+The OneApp JWT token should contain the following claims:
+
+```json
+{
+  "member_id": "00000000-0000-0000-0000-000000000001",
+  "unit_id": "00000000-0000-0000-0000-000000000002",
+  "company_id": "8454",
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "exp": 1690464000
+}
+```
+
+#### Token Verification Middleware
+
+The Member Staff API uses a middleware to verify the JWT token and extract the member context:
+
+```php
+// app/Http/Middleware/VerifyJwtToken.php
+public function handle(Request $request, Closure $next)
+{
+    try {
+        $token = $request->bearerToken();
+        if (!$token) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        // Verify token with OneApp's public key
+        $decoded = JWT::decode($token, new Key(config('auth.jwt_public_key'), 'RS256'));
+
+        // Store member context in request for later use
+        $request->merge([
+            'member_context' => [
+                'member_id' => $decoded->member_id,
+                'unit_id' => $decoded->unit_id,
+                'company_id' => $decoded->company_id
+            ]
+        ]);
+
+        return $next($request);
+    } catch (\Exception $e) {
+        return response()->json(['message' => 'Invalid token'], 401);
+    }
+}
+```
 
 ### 3. CORS Configuration
 
@@ -247,6 +351,62 @@ return [
     'supports_credentials' => false,
 ];
 ```
+
+### 4. Database Connection
+
+The Member Staff module needs to connect to the existing OneApp MySQL database. Configure the database connection in the Laravel backend:
+
+```php
+// config/database.php
+'mysql' => [
+    'driver' => 'mysql',
+    'url' => env('DATABASE_URL'),
+    'host' => env('DB_HOST', '127.0.0.1'),
+    'port' => env('DB_PORT', '3306'),
+    'database' => env('DB_DATABASE', 'oneapp_db'),
+    'username' => env('DB_USERNAME', 'oneapp_user'),
+    'password' => env('DB_PASSWORD', ''),
+    'unix_socket' => env('DB_SOCKET', ''),
+    'charset' => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci',
+    'prefix' => env('DB_PREFIX', ''),
+    'prefix_indexes' => true,
+    'strict' => true,
+    'engine' => null,
+    'options' => extension_loaded('pdo_mysql') ? array_filter([
+        PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+    ]) : [],
+],
+```
+
+Update the `.env` file with the OneApp database credentials:
+
+```
+DB_CONNECTION=mysql
+DB_HOST=your_mysql_host
+DB_PORT=3306
+DB_DATABASE=oneapp_db
+DB_USERNAME=oneapp_user
+DB_PASSWORD=your_password
+DB_PREFIX=oneapp_  # If your OneApp uses table prefixes
+```
+
+### 5. Database Migrations
+
+Run the Member Staff module migrations to create the necessary tables in the OneApp database:
+
+```bash
+php artisan migrate --path=database/migrations/member_staff
+```
+
+The migrations will create the following tables:
+
+- `{prefix}staff` - Stores staff information
+- `{prefix}time_slots` - Stores staff availability time slots
+- `{prefix}member_staff_assignments` - Stores member-staff assignments
+- `{prefix}member_staff_bookings` - Stores staff booking information
+- `{prefix}booking_slots` - Stores individual booking time slots
+- `{prefix}member_staff_attendance` - Stores staff attendance records
 
 ## UI Integration
 
@@ -289,7 +449,7 @@ Set up deep linking to the Member Staff module:
 if (route.startsWith('/member-staff')) {
   // Extract any parameters if needed
   final params = extractParams(route);
-  
+
   // Navigate to the Member Staff module
   navigateToMemberStaffModule(context, params);
   return true;
@@ -321,9 +481,9 @@ Test that API requests include the correct authentication and member context:
 test('API requests include authentication and member context', () async {
   final apiClient = ApiClient(baseUrl: 'https://api.example.com');
   final request = await apiClient.prepareRequest('GET', 'endpoint');
-  
+
   expect(request.headers['Authorization'], startsWith('Bearer '));
-  
+
   final body = jsonDecode(request.body);
   expect(body, contains('member_id'));
   expect(body, contains('unit_id'));
@@ -331,7 +491,44 @@ test('API requests include authentication and member context', () async {
 });
 ```
 
-### 3. UI Testing
+### 3. Database Connection Testing
+
+Test that the Member Staff module correctly connects to the OneApp database:
+
+```dart
+// Test code using Laravel's testing framework
+class DatabaseConnectionTest extends TestCase
+{
+    public function testDatabaseConnection()
+    {
+        // Test connection to the OneApp database
+        $this->assertTrue(DB::connection()->getDatabaseName() === 'oneapp_db');
+
+        // Test that we can query the staff table
+        $staff = DB::table('staff')->first();
+        $this->assertNotNull($staff);
+    }
+
+    public function testMemberStaffTables()
+    {
+        // Test that all required tables exist
+        $tables = [
+            'staff',
+            'time_slots',
+            'member_staff_assignments',
+            'member_staff_bookings',
+            'booking_slots',
+            'member_staff_attendance'
+        ];
+
+        foreach ($tables as $table) {
+            $this->assertTrue(Schema::hasTable($table));
+        }
+    }
+}
+```
+
+### 4. UI Testing
 
 Test that the Member Staff module UI is correctly displayed within your app:
 
@@ -343,8 +540,49 @@ testWidgets('Member Staff module UI is displayed', (WidgetTester tester) async {
       home: MemberStaffModule(baseUrl: 'https://api.example.com'),
     ),
   );
-  
+
   expect(find.text('Verify Staff Member'), findsOneWidget);
+});
+```
+
+### 5. End-to-End Testing
+
+Test the complete flow from the OneApp to the Member Staff module and back:
+
+```dart
+testWidgets('End-to-end integration test', (WidgetTester tester) async {
+  // Set up a mock authentication service
+  final mockAuthService = MockAuthService();
+  when(mockAuthService.getToken()).thenAnswer((_) async => 'valid_jwt_token');
+
+  // Build the app with the mock auth service
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        Provider<AuthService>.value(value: mockAuthService),
+      ],
+      child: MyApp(),
+    ),
+  );
+
+  // Navigate to the Member Staff module
+  await tester.tap(find.text('Member Staff'));
+  await tester.pumpAndSettle();
+
+  // Verify that the Member Staff module is displayed
+  expect(find.text('Staff Management'), findsOneWidget);
+
+  // Test a complete flow (e.g., booking a staff member)
+  await tester.tap(find.text('Search Staff'));
+  await tester.pumpAndSettle();
+
+  // Enter search criteria
+  await tester.enterText(find.byType(TextField).first, 'Cook');
+  await tester.tap(find.text('Search'));
+  await tester.pumpAndSettle();
+
+  // Verify search results
+  expect(find.text('Available Staff'), findsOneWidget);
 });
 ```
 
@@ -360,6 +598,8 @@ testWidgets('Member Staff module UI is displayed', (WidgetTester tester) async {
 - Verify that the authentication token is correctly passed to the Member Staff module
 - Check that the token is valid and not expired
 - Ensure the token includes the required member context
+- Verify that the JWT token structure matches what the API expects
+- Check that the public key used for JWT verification is correct
 
 #### 2. API Connection Issues
 
@@ -369,8 +609,30 @@ testWidgets('Member Staff module UI is displayed', (WidgetTester tester) async {
 - Verify that the API endpoint is correctly configured
 - Check network connectivity
 - Ensure the API server is running and accessible
+- Check that the API routes are correctly registered in Laravel
 
-#### 3. UI Rendering Issues
+#### 3. Database Connection Issues
+
+**Symptom**: Database queries fail or return unexpected results.
+
+**Solution**:
+- Verify that the database credentials in the `.env` file are correct
+- Check that the database user has the necessary permissions
+- Ensure that the required tables exist in the database
+- Check for table prefix issues if the OneApp uses table prefixes
+- Run migrations to ensure all tables are created correctly
+
+#### 4. Member Context Issues
+
+**Symptom**: API requests succeed but return incorrect data or unauthorized errors.
+
+**Solution**:
+- Verify that the JWT token contains the correct member context (member_id, unit_id, company_id)
+- Check that the member context is correctly extracted and passed to API requests
+- Ensure that the member has the necessary permissions in the database
+- Check that the middleware correctly extracts and stores the member context
+
+#### 5. UI Rendering Issues
 
 **Symptom**: UI elements are not displayed correctly or are misaligned.
 
@@ -378,6 +640,7 @@ testWidgets('Member Staff module UI is displayed', (WidgetTester tester) async {
 - Verify that the theme is correctly passed to the Member Staff module
 - Check for any conflicting styles or themes
 - Ensure the parent app and the Member Staff module use compatible Flutter versions
+- Check for any missing assets or resources
 
 ### Logging
 
@@ -388,7 +651,7 @@ Enable detailed logging to troubleshoot integration issues:
 void main() {
   // Enable detailed logging
   Logging.enableDetailedLogs = true;
-  
+
   runApp(MyApp());
 }
 ```
