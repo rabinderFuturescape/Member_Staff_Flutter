@@ -40,6 +40,7 @@ member_staff_app/
 - **Staff Booking**: Book staff services with hourly time slots
 - **Scheduling**: View and manage staff schedules with calendar integration
 - **Attendance Tracking**: Mark staff attendance with photo proof and notes
+- **Admin Dashboard**: Real-time monitoring of staff attendance with WebSockets integration
 - **Authentication**: Secure login and role-based access control
 - **Reporting**: Generate reports on member and staff data
 
@@ -86,11 +87,16 @@ This project follows clean architecture principles and is organized into layers:
 The application connects to a Laravel backend API that provides:
 
 - Member and staff management endpoints
-- Authentication and authorization
+- Authentication and authorization with role-based access control
 - Booking and scheduling functionality
+- Attendance tracking and management
+- Real-time updates via WebSockets
 - Data persistence with MySQL
 
-API documentation is available in the `member_staff_booking_api_spec.yaml` file.
+API documentation is available in the following OpenAPI specification files:
+- `member_staff_booking_api_spec.yaml` - Booking API endpoints
+- `member_staff_attendance_api_spec.yaml` - Attendance API endpoints
+- `admin_attendance_api_spec.yaml` - Admin dashboard API endpoints
 
 ## Testing
 

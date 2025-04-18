@@ -9,9 +9,10 @@ This document provides a comprehensive overview of all API endpoints used in the
 3. [Staff Management](#staff-management)
 4. [Schedule Management](#schedule-management)
 5. [Member-Staff Assignment](#member-staff-assignment)
-6. [Error Handling](#error-handling)
-7. [API Client](#api-client)
-8. [API Models](#api-models)
+6. [Admin Dashboard](#admin-dashboard)
+7. [Error Handling](#error-handling)
+8. [API Client](#api-client)
+9. [API Models](#api-models)
 
 ## Base URL
 
@@ -756,6 +757,94 @@ Searches for staff.
 }
 ```
 
+## Admin Dashboard
+
+### Get Attendance Records
+
+**Endpoint**: `GET /admin/attendance`
+
+Retrieves attendance records with filtering and pagination.
+
+**Query Parameters**:
+- `date` (required): Date to get attendance for (YYYY-MM-DD)
+- `status` (optional): Filter by attendance status (present, absent, not_marked)
+- `search` (optional): Search term for staff name
+- `page` (optional): Page number for pagination (default: 1)
+- `limit` (optional): Number of records per page (default: 10)
+
+**Response**:
+```json
+{
+  "records": [
+    {
+      "staff_id": 1001,
+      "staff_name": "Staff Member 1",
+      "staff_category": "Domestic Help",
+      "staff_photo": "https://example.com/photo1.jpg",
+      "status": "present",
+      "note": "On time",
+      "photo_url": "https://example.com/proof1.jpg",
+      "updated_at": "2023-11-15T09:30:00.000Z"
+    }
+  ],
+  "total": 20,
+  "page": 1,
+  "limit": 10,
+  "totalPages": 2
+}
+```
+
+### Get Attendance Summary
+
+**Endpoint**: `GET /admin/attendance/summary`
+
+Retrieves summary statistics for attendance on a specific date.
+
+**Query Parameters**:
+- `date` (required): Date to get summary for (YYYY-MM-DD)
+
+**Response**:
+```json
+{
+  "present": 15,
+  "absent": 5,
+  "not_marked": 2,
+  "total": 22
+}
+```
+
+### Update Attendance Status
+
+**Endpoint**: `POST /admin/attendance/update`
+
+Updates the status of an attendance record and broadcasts the change via WebSockets.
+
+**Request Body**:
+```json
+{
+  "attendance_id": 1001,
+  "status": "present",
+  "note": "Updated note"
+}
+```
+
+**Response**:
+```json
+{
+  "status": "success",
+  "message": "Attendance updated successfully",
+  "attendance": {
+    "id": 1001,
+    "staff_id": 1001,
+    "staff_name": "Staff Member 1",
+    "status": "present",
+    "note": "Updated note",
+    "photo_url": "https://example.com/proof1.jpg",
+    "updated_at": "2023-11-15T10:15:00.000Z"
+  }
+}
+```
+
 ## Error Handling
 
 All API endpoints return a consistent error response format:
@@ -788,12 +877,12 @@ The Member Staff module includes an API client for making requests to the API:
 class ApiClient {
   final String baseUrl;
   final http.Client _httpClient;
-  
+
   ApiClient({
     required this.baseUrl,
     http.Client? httpClient,
   }) : _httpClient = httpClient ?? http.Client();
-  
+
   Future<dynamic> get(String endpoint, {Map<String, dynamic>? queryParams});
   Future<dynamic> post(String endpoint, {Map<String, dynamic>? body});
   Future<dynamic> put(String endpoint, {Map<String, dynamic>? body});
@@ -831,14 +920,14 @@ class ApiResponse<T> {
   final String? message;
   final T? data;
   final Map<String, dynamic>? errors;
-  
+
   ApiResponse({
     required this.success,
     this.message,
     this.data,
     this.errors,
   });
-  
+
   factory ApiResponse.fromJson(Map<String, dynamic> json, T Function(dynamic) fromJson);
   factory ApiResponse.fromJsonList(Map<String, dynamic> json, T Function(dynamic) fromJson);
 }
@@ -852,7 +941,7 @@ class ApiException implements Exception {
   final int? statusCode;
   final bool isAuthError;
   final Map<String, dynamic>? errors;
-  
+
   ApiException({
     required this.message,
     this.statusCode,

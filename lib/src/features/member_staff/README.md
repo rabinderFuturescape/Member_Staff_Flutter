@@ -12,6 +12,8 @@ This module provides functionality for members to search for staff, check availa
 - Track staff attendance with calendar view
 - Mark staff as present or absent
 - Capture photos and notes for attendance records
+- Admin dashboard for monitoring staff attendance
+- Real-time updates via WebSockets
 
 ## Screens
 
@@ -45,6 +47,14 @@ This module provides functionality for members to search for staff, check availa
 - Capture photos as proof of attendance
 - Submit attendance records to backend
 
+### Admin Attendance Dashboard
+- View attendance records by date
+- Filter by attendance status (present, absent, not marked)
+- Search staff by name
+- Export attendance data to CSV
+- View photo proof of attendance
+- Real-time updates of attendance changes
+
 ## Components
 
 ### Reschedule Modal
@@ -66,13 +76,18 @@ The `MemberStaffAttendanceApi` class provides methods for:
 - Getting attendance records for a month
 - Saving attendance records for a date
 
+The `AdminAttendanceApi` class provides methods for:
+- Getting attendance records with filtering and pagination
+- Getting attendance summary statistics
+- Updating attendance status
+
 The `AttendanceService` class provides a higher-level interface for:
 - Loading attendance data for a month
 - Saving attendance records
 - Taking photos for attendance proof
 - Getting mock staff data for testing
 
-The API connects to a Laravel backend that handles data persistence and business logic.
+The API connects to a Laravel backend that handles data persistence and business logic, with WebSockets for real-time updates.
 
 ## Data Models
 
@@ -82,6 +97,8 @@ The API connects to a Laravel backend that handles data persistence and business
 - `HourlyAvailability`: For representing staff availability by hour
 - `StaffAttendance`: For representing staff attendance records
 - `DayAttendanceStatus`: For representing the overall attendance status for a day
+- `AttendanceRecord`: For representing attendance records in the admin dashboard
+- `AttendanceSummary`: For representing attendance summary statistics
 
 ## Usage
 
@@ -119,6 +136,9 @@ This feature integrates with a Laravel backend API that provides:
 - Role-based authorization (member vs admin roles)
 - Data persistence with MySQL
 - Business logic for booking management
+- WebSockets for real-time updates
+- Laravel Echo Server for broadcasting events
+- Redis for WebSockets message queue
 
 The backend uses simplified models and migrations for easy maintenance:
 
@@ -140,6 +160,8 @@ class MemberStaffBooking extends Model
 // MemberStaffAttendance model
 class MemberStaffAttendance extends Model
 {
+    use HasFactory;
+
     protected $table = 'member_staff_attendance';
 
     protected $fillable = [
@@ -150,5 +172,39 @@ class MemberStaffAttendance extends Model
     protected $casts = [
         'date' => 'date',
     ];
+
+    public function staff(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class);
+    }
+
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(Member::class);
+    }
+}
+
+// AttendanceUpdated event for WebSockets
+class AttendanceUpdated implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public $attendanceData;
+
+    public function __construct(MemberStaffAttendance $attendance)
+    {
+        $this->attendanceData = [
+            'id' => $attendance->id,
+            'staff_id' => $attendance->staff_id,
+            'staff_name' => $attendance->staff->name ?? 'Unknown',
+            'status' => $attendance->status,
+            'updated_at' => $attendance->updated_at->toIso8601String()
+        ];
+    }
+
+    public function broadcastOn()
+    {
+        return new Channel('attendance');
+    }
 }
 ```
