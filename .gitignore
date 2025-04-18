@@ -28,6 +28,9 @@ out/
 .DS_Store
 Thumbs.db
 
+# Flutter SDK
+flutter/
+
 # Logs
 logs/
 *.log
