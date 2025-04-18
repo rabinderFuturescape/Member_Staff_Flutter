@@ -1,0 +1,778 @@
+{
+	"info": {
+		"_postman_id": "f8a7b3e5-6d2c-4a5e-9f1c-8e5d6b7c9a0b",
+		"name": "Member Staff API",
+		"description": "A collection for testing the Member Staff API endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Generate Test Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"member_id\": \"{{member_id}}\",\n    \"unit_id\": \"{{unit_id}}\",\n    \"company_id\": \"{{company_id}}\",\n    \"name\": \"Test Member\",\n    \"email\": \"test@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/generate-test-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"generate-test-token"
+							]
+						},
+						"description": "Generate a test JWT token for development purposes."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"{{auth_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/verify-token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"verify-token"
+							]
+						},
+						"description": "Verify a JWT token."
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for generating and verifying JWT tokens."
+		},
+		{
+			"name": "Staff Management",
+			"item": [
+				{
+					"name": "Check Staff Mobile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staff/check?mobile=917411122233",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"check"
+							],
+							"query": [
+								{
+									"key": "mobile",
+									"value": "917411122233"
+								}
+							]
+						},
+						"description": "Check if a staff exists by mobile number."
+					},
+					"response": []
+				},
+				{
+					"name": "Send OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mobile\": \"917411122233\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staff/send-otp",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"send-otp"
+							]
+						},
+						"description": "Send OTP to a mobile number."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mobile\": \"917411122233\",\n    \"otp\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staff/verify-otp",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"verify-otp"
+							]
+						},
+						"description": "Verify an OTP."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"mobile\": \"917433344455\",\n    \"email\": \"john.doe@example.com\",\n    \"staff_scope\": \"member\",\n    \"unit_id\": \"{{unit_id}}\",\n    \"company_id\": \"{{company_id}}\",\n    \"member_id\": \"{{member_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staff",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff"
+							]
+						},
+						"description": "Create a new staff."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Staff",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}"
+							]
+						},
+						"description": "Get a staff's details."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Staff",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"email\": \"john.updated@example.com\",\n    \"member_id\": \"{{member_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}"
+							]
+						},
+						"description": "Update a staff's details."
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Staff Identity",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "aadhaar_number",
+									"value": "123456789012",
+									"type": "text"
+								},
+								{
+									"key": "residential_address",
+									"value": "123 Main St, City, State, Country",
+									"type": "text"
+								},
+								{
+									"key": "next_of_kin_name",
+									"value": "Jane Doe",
+									"type": "text"
+								},
+								{
+									"key": "next_of_kin_mobile",
+									"value": "917411122234",
+									"type": "text"
+								},
+								{
+									"key": "photo",
+									"type": "file",
+									"src": "/path/to/photo.jpg"
+								},
+								{
+									"key": "member_id",
+									"value": "{{member_id}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}/verify",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}",
+								"verify"
+							]
+						},
+						"description": "Verify a staff's identity."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Staff",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}"
+							]
+						},
+						"description": "Delete a staff."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing staff members."
+		},
+		{
+			"name": "Schedule Management",
+			"item": [
+				{
+					"name": "Get Staff Schedule",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}/schedule?start_date=2023-07-01&end_date=2023-07-07",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}",
+								"schedule"
+							],
+							"query": [
+								{
+									"key": "start_date",
+									"value": "2023-07-01"
+								},
+								{
+									"key": "end_date",
+									"value": "2023-07-07"
+								}
+							]
+						},
+						"description": "Get a staff's schedule."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Time Slot",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2023-07-01\",\n    \"start_time\": \"09:00\",\n    \"end_time\": \"10:00\",\n    \"is_booked\": false,\n    \"member_id\": \"{{member_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}/schedule/slots",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}",
+								"schedule",
+								"slots"
+							]
+						},
+						"description": "Add a time slot to a staff's schedule."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Time Slot",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"date\": \"2023-07-01\",\n    \"start_time\": \"10:00\",\n    \"end_time\": \"11:00\",\n    \"is_booked\": true,\n    \"member_id\": \"{{member_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}/schedule/slots/{{time_slot_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}",
+								"schedule",
+								"slots",
+								"{{time_slot_id}}"
+							]
+						},
+						"description": "Update a time slot."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Time Slot",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}/schedule/slots/{{time_slot_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}",
+								"schedule",
+								"slots",
+								"{{time_slot_id}}"
+							]
+						},
+						"description": "Remove a time slot."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Time Slots for Date",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}/schedule/date/2023-07-01",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}",
+								"schedule",
+								"date",
+								"2023-07-01"
+							]
+						},
+						"description": "Get time slots for a specific date."
+					},
+					"response": []
+				},
+				{
+					"name": "Bulk Add Time Slots",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"time_slots\": [\n        {\n            \"date\": \"2023-07-01\",\n            \"start_time\": \"09:00\",\n            \"end_time\": \"10:00\",\n            \"is_booked\": false\n        },\n        {\n            \"date\": \"2023-07-01\",\n            \"start_time\": \"10:00\",\n            \"end_time\": \"11:00\",\n            \"is_booked\": false\n        },\n        {\n            \"date\": \"2023-07-01\",\n            \"start_time\": \"11:00\",\n            \"end_time\": \"12:00\",\n            \"is_booked\": false\n        }\n    ],\n    \"member_id\": \"{{member_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/staff/{{staff_id}}/schedule/slots/bulk",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"{{staff_id}}",
+								"schedule",
+								"slots",
+								"bulk"
+							]
+						},
+						"description": "Bulk add time slots."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing staff schedules."
+		},
+		{
+			"name": "Member-Staff Assignment",
+			"item": [
+				{
+					"name": "Get Member Staff",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/members/{{member_id}}/staff",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"members",
+								"{{member_id}}",
+								"staff"
+							]
+						},
+						"description": "Get staff assigned to a member."
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Staff to Member",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"member_id\": \"{{member_id}}\",\n    \"staff_id\": \"{{staff_id}}\",\n    \"assigned_by\": \"{{member_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/member-staff/assign",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"member-staff",
+								"assign"
+							]
+						},
+						"description": "Assign a staff to a member."
+					},
+					"response": []
+				},
+				{
+					"name": "Unassign Staff from Member",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"member_id\": \"{{member_id}}\",\n    \"staff_id\": \"{{staff_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/member-staff/unassign",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"member-staff",
+								"unassign"
+							]
+						},
+						"description": "Unassign a staff from a member."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Company Staff",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/company/{{company_id}}/staff?staff_scope=member&is_verified=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"company",
+								"{{company_id}}",
+								"staff"
+							],
+							"query": [
+								{
+									"key": "staff_scope",
+									"value": "member"
+								},
+								{
+									"key": "is_verified",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get all staff for a company."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Staff",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/staff/search?company_id={{company_id}}&query=john&staff_scope=member&is_verified=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"staff",
+								"search"
+							],
+							"query": [
+								{
+									"key": "company_id",
+									"value": "{{company_id}}"
+								},
+								{
+									"key": "query",
+									"value": "john"
+								},
+								{
+									"key": "staff_scope",
+									"value": "member"
+								},
+								{
+									"key": "is_verified",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Search for staff."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for managing member-staff assignments."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string",
+			"description": "Base URL for the API"
+		},
+		{
+			"key": "auth_token",
+			"value": "your_jwt_token",
+			"type": "string",
+			"description": "JWT token for authentication"
+		},
+		{
+			"key": "member_id",
+			"value": "00000000-0000-0000-0000-000000000001",
+			"type": "string",
+			"description": "Member ID"
+		},
+		{
+			"key": "unit_id",
+			"value": "00000000-0000-0000-0000-000000000002",
+			"type": "string",
+			"description": "Unit ID"
+		},
+		{
+			"key": "company_id",
+			"value": "8454",
+			"type": "string",
+			"description": "Company ID"
+		},
+		{
+			"key": "staff_id",
+			"value": "00000000-0000-0000-0000-000000000003",
+			"type": "string",
+			"description": "Staff ID"
+		},
+		{
+			"key": "time_slot_id",
+			"value": "00000000-0000-0000-0000-000000000004",
+			"type": "string",
+			"description": "Time Slot ID"
+		}
+	]
+}
