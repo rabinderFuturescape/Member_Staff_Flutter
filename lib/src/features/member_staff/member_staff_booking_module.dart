@@ -3,6 +3,7 @@ import 'screens/member_staff_search_screen.dart';
 import 'screens/booking_list_screen.dart';
 import 'screens/member_staff_booking_screen.dart';
 import 'screens/calendar_booking_screen.dart';
+import 'screens/staff_attendance_screen.dart';
 
 /// Module for Member Staff Booking feature
 class MemberStaffBookingModule {
@@ -12,6 +13,7 @@ class MemberStaffBookingModule {
       '/member-staff/search': (context) => const MemberStaffSearchScreen(),
       '/member-staff/bookings': (context) => const BookingListScreen(),
       '/member-staff/bookings/calendar': (context) => const CalendarBookingScreen(),
+      '/member-staff/attendance': (context) => const StaffAttendanceScreen(),
       '/member-staff/book': (context) {
         final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
         return MemberStaffBookingScreen(

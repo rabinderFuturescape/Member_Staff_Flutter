@@ -7,6 +7,7 @@ This application provides functionality to manage members and staff information,
 - Member registration and management
 - Staff registration and management
 - Staff booking and scheduling
+- Staff attendance tracking
 - User authentication and authorization
 - Reporting and analytics
 
@@ -38,6 +39,7 @@ member_staff_app/
 - **Staff Management**: Add, edit, view, and delete staff information
 - **Staff Booking**: Book staff services with hourly time slots
 - **Scheduling**: View and manage staff schedules with calendar integration
+- **Attendance Tracking**: Mark staff attendance with photo proof and notes
 - **Authentication**: Secure login and role-based access control
 - **Reporting**: Generate reports on member and staff data
 

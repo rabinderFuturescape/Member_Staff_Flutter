@@ -1,6 +1,6 @@
-# Member Staff Booking Feature
+# Member Staff Feature
 
-This module provides functionality for members to search for staff, check availability, book staff services, and manage their bookings. It includes both list and calendar views for managing bookings.
+This module provides functionality for members to search for staff, check availability, book staff services, manage their bookings, and track staff attendance. It includes both list and calendar views for managing bookings and attendance.
 
 ## Features
 
@@ -9,6 +9,9 @@ This module provides functionality for members to search for staff, check availa
 - Book staff for specific dates and times
 - View bookings in list or calendar format
 - Reschedule or cancel bookings
+- Track staff attendance with calendar view
+- Mark staff as present or absent
+- Capture photos and notes for attendance records
 
 ## Screens
 
@@ -35,6 +38,13 @@ This module provides functionality for members to search for staff, check availa
 - Reschedule or cancel bookings
 - Switch to list view
 
+### Staff Attendance Screen
+- View calendar with attendance status indicators
+- Mark staff as present or absent for selected date
+- Add notes for attendance records
+- Capture photos as proof of attendance
+- Submit attendance records to backend
+
 ## Components
 
 ### Reschedule Modal
@@ -52,6 +62,10 @@ The `MemberStaffBookingApi` class provides methods for:
 - Cancelling bookings
 - Getting staff availability
 
+The `MemberStaffAttendanceApi` class provides methods for:
+- Getting attendance records for a month
+- Saving attendance records for a date
+
 The API connects to a Laravel backend that handles data persistence and business logic.
 
 ## Data Models
@@ -60,6 +74,8 @@ The API connects to a Laravel backend that handles data persistence and business
 - `BookingResponse`: For handling booking creation responses
 - `BookingSlotView`: For displaying booking slots in the UI
 - `HourlyAvailability`: For representing staff availability by hour
+- `StaffAttendance`: For representing staff attendance records
+- `DayAttendanceStatus`: For representing the overall attendance status for a day
 
 ## Usage
 
@@ -75,6 +91,9 @@ Navigator.pushNamed(context, '/member-staff/bookings');
 
 // Navigate to calendar view
 Navigator.pushNamed(context, '/member-staff/bookings/calendar');
+
+// Navigate to attendance screen
+Navigator.pushNamed(context, '/member-staff/attendance');
 
 // Navigate to booking screen with arguments
 Navigator.pushNamed(
@@ -110,5 +129,20 @@ class MemberStaffBooking extends Model
     {
         return $this->hasMany(BookingSlot::class, 'booking_id');
     }
+}
+
+// MemberStaffAttendance model
+class MemberStaffAttendance extends Model
+{
+    protected $table = 'member_staff_attendance';
+
+    protected $fillable = [
+        'member_id', 'staff_id', 'unit_id', 'date',
+        'status', 'note', 'photo_url'
+    ];
+
+    protected $casts = [
+        'date' => 'date',
+    ];
 }
 ```
