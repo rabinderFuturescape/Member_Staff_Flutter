@@ -14,8 +14,14 @@ This application provides a complete solution for society management, including:
 - Real-time monitoring through Admin Dashboard
 - Dynamic content management through Strapi CMS integration
 - Multi-language support with localization
-- Secure real-time chat service with direct messaging, group chats, and committee rooms
-- End-to-end encrypted communication with OneSSO integration
+- Comprehensive chat service with:
+  - Peer-to-peer direct messaging
+  - Public and private group chat rooms
+  - Committee-only rooms with voting capabilities
+  - Real-time message delivery with typing indicators
+  - Offline message caching and sync
+  - End-to-end encrypted communication
+  - OneSSO integration for secure access
 
 ## Project Structure
 
@@ -32,6 +38,28 @@ Member_Staff_Flutter/
 │   │   ├── widgets/              # CMS UI components
 │   │   ├── localization/         # Localization support
 │   │   └── schema/               # CMS schema definitions
+│   ├── design_system/            # Design system components
+│   │   ├── README.md             # Design system documentation
+│   │   ├── DEVELOPERS_GUIDE.md   # Developer's guide for using the design system
+│   │   ├── core/                 # Core design system components
+│   │   │   ├── colors.dart       # Color palette definitions
+│   │   │   ├── typography.dart   # Typography styles
+│   │   │   ├── spacing.dart      # Spacing constants
+│   │   │   ├── borders.dart      # Border styles and radius
+│   │   │   ├── shadows.dart      # Shadow styles
+│   │   │   └── animations.dart   # Animation definitions
+│   │   ├── themes/               # Theme definitions
+│   │   │   ├── app_theme.dart    # Main theme configuration
+│   │   │   ├── light_theme.dart  # Light theme implementation
+│   │   │   └── dark_theme.dart   # Dark theme implementation
+│   │   ├── widgets/              # Reusable design system widgets
+│   │   │   ├── buttons/          # Button components
+│   │   │   ├── inputs/           # Input components
+│   │   │   └── cards/            # Card components
+│   │   ├── providers/            # Design system providers
+│   │   ├── utils/                # Design system utilities
+│   │   ├── assets/               # Asset management
+│   │   └── console/              # Design console screens
 │   ├── models/                   # Data models
 │   │   ├── dues_chart_model.dart # Chart data models for All Dues Report
 │   │   ├── dues_report_model.dart# Dues report data models
@@ -342,6 +370,8 @@ Detailed documentation for each feature is available in the following files:
 - **Strapi CMS Integration**: [README_STRAPI_CMS.md](README_STRAPI_CMS.md)
 - **CMS Localization**: [lib/cms/localization/README.md](lib/cms/localization/README.md)
 - **Feature Request Module**: [lib/src/features/feature_request/README.md](lib/src/features/feature_request/README.md)
+- **Design System**: [lib/design_system/README.md](lib/design_system/README.md)
+- **Design System Developer's Guide**: [lib/design_system/DEVELOPERS_GUIDE.md](lib/design_system/DEVELOPERS_GUIDE.md)
 - **API Documentation**: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 - **Integration Guide**: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
 - **Test Cases**: [TEST_CASES.md](TEST_CASES.md)
