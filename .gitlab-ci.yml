@@ -1,0 +1,88 @@
+stages:
+  - build
+  - encode
+  - dockerize
+  - deploy
+
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_IMAGE: registry.example.com/secure-laravel-app
+
+# 🔨 Build Laravel (optional if using Composer or JS assets)
+build_laravel:
+  image: composer:2
+  stage: build
+  script:
+    - composer install --no-dev --optimize-autoloader
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - vendor/
+      - bootstrap/cache/
+      - public/build/
+      - node_modules/
+
+# 🔐 Encode Laravel PHP files using ionCube
+encode_php:
+  image: alpine:latest
+  stage: encode
+  before_script:
+    - apk add --no-cache bash curl tar
+    - mkdir -p /tmp/ioncube
+    - curl -o /tmp/ioncube/encoder.tar.gz https://downloads.ioncube.com/loader_downloads/ioncube_encoder_eval_x86-64.tar.gz
+    - tar -xzf /tmp/ioncube/encoder.tar.gz -C /tmp/ioncube
+  script:
+    - mkdir -p encoded-src
+    # Encode app directory
+    - /tmp/ioncube/ioncube_encoder*/ioncube_encoder.sh -o encoded-src/app app/ --with-license=${LICENSE_FILE} --expire "${EXPIRY_DATE:-2025-12-31}" --obfuscate
+    # Encode routes directory
+    - /tmp/ioncube/ioncube_encoder*/ioncube_encoder.sh -o encoded-src/routes routes/ --with-license=${LICENSE_FILE} --expire "${EXPIRY_DATE:-2025-12-31}" --obfuscate
+    # Encode database directory (seeders and factories)
+    - /tmp/ioncube/ioncube_encoder*/ioncube_encoder.sh -o encoded-src/database/seeders database/seeders/ --with-license=${LICENSE_FILE} --expire "${EXPIRY_DATE:-2025-12-31}" --obfuscate
+    - /tmp/ioncube/ioncube_encoder*/ioncube_encoder.sh -o encoded-src/database/factories database/factories/ --with-license=${LICENSE_FILE} --expire "${EXPIRY_DATE:-2025-12-31}" --obfuscate
+    # Encode config directory (optional)
+    - /tmp/ioncube/ioncube_encoder*/ioncube_encoder.sh -o encoded-src/config config/ --with-license=${LICENSE_FILE} --expire "${EXPIRY_DATE:-2025-12-31}" --obfuscate
+    # Copy other directories that don't need encoding
+    - cp -r public resources storage vendor bootstrap database/migrations encoded-src/
+  artifacts:
+    paths:
+      - encoded-src/
+  needs:
+    - build_laravel
+
+# 🐳 Dockerize using encoded source
+dockerize:
+  image: docker:24
+  stage: dockerize
+  services:
+    - docker:dind
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA -t $DOCKER_IMAGE:latest .
+    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
+    - docker push $DOCKER_IMAGE:latest
+  needs:
+    - encode_php
+
+# 🚀 Deploy (Kubernetes, ECS, SSH etc.)
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache bash openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo "Deploying build $CI_COMMIT_SHORT_SHA..."
+    - ssh $DEPLOY_SSH_USER@$DEPLOY_SSH_HOST "cd /var/www/app && ./deploy.sh $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
+  environment:
+    name: production
+  only:
+    - main
+  needs:
+    - dockerize

@@ -1,0 +1,10 @@
+; This is a sample license file for ionCube
+; In a real environment, you would replace this with your actual license file
+; provided by ionCube after purchase
+
+[license]
+name="Your Company Name"
+email="your.email@example.com"
+domain="example.com"
+ip="*"
+expiry="2025-12-31"
