@@ -1,0 +1,27 @@
+deploy:
+  image: alpine:latest
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - apk add --no-cache openssh-client bash curl
+    - eval $(ssh-agent -s)
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo "Deploying build $CI_COMMIT_SHORT_SHA to $DEPLOY_ENVIRONMENT..."
+    - |
+      ssh $DEPLOY_SSH_USER@$DEPLOY_SSH_HOST "
+        cd $DEPLOY_PATH && \
+        ./scripts/deploy.sh $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA $DEPLOY_ENVIRONMENT
+      "
+  environment:
+    name: $DEPLOY_ENVIRONMENT
+  only:
+    - main
+  when: manual
+  needs:
+    - cosign-verify
