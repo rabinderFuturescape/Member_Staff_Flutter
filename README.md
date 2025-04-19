@@ -19,6 +19,29 @@ This application provides a complete solution for society management, including:
 Member_Staff_Flutter/
 ├── lib/                          # Flutter application code
 │   ├── main.dart                 # Entry point of the application
+│   ├── design_system_app.dart    # Design system app wrapper
+│   ├── design_system/            # Design system components
+│   │   ├── README.md             # Design system documentation
+│   │   ├── DEVELOPERS_GUIDE.md   # Developer's guide for using the design system
+│   │   ├── core/                 # Core design system components
+│   │   │   ├── colors.dart       # Color palette definitions
+│   │   │   ├── typography.dart   # Typography styles
+│   │   │   ├── spacing.dart      # Spacing constants
+│   │   │   ├── borders.dart      # Border styles and radius
+│   │   │   ├── shadows.dart      # Shadow styles
+│   │   │   └── animations.dart   # Animation definitions
+│   │   ├── themes/               # Theme definitions
+│   │   │   ├── app_theme.dart    # Main theme configuration
+│   │   │   ├── light_theme.dart  # Light theme implementation
+│   │   │   └── dark_theme.dart   # Dark theme implementation
+│   │   ├── widgets/              # Reusable design system widgets
+│   │   │   ├── buttons/          # Button components
+│   │   │   ├── inputs/           # Input components
+│   │   │   └── cards/            # Card components
+│   │   ├── providers/            # Design system providers
+│   │   ├── utils/                # Design system utilities
+│   │   ├── assets/               # Asset management
+│   │   └── console/              # Design console screens
 │   ├── models/                   # Data models
 │   │   ├── dues_chart_model.dart # Chart data models for All Dues Report
 │   │   ├── dues_report_model.dart# Dues report data models
@@ -117,6 +140,14 @@ Member_Staff_Flutter/
 - **Automatic Token Refresh**: Transparent token refresh mechanism for uninterrupted user experience
 - **Secure API Communication**: Encrypted data transfer between app and backend
 
+### Design System
+- **Centralized Design Management**: Unified system for managing colors, typography, spacing, and UI components
+- **Theme Support**: Built-in light and dark theme with easy switching
+- **Reusable Components**: Pre-built UI components following design guidelines (buttons, inputs, cards)
+- **Accessibility Features**: Font scaling, reduced motion, and high contrast mode
+- **Responsive Design**: Utilities for creating responsive layouts across different screen sizes
+- **Design Console**: Interactive tool for previewing and customizing design elements
+
 ## Getting Started
 
 ### Prerequisites
@@ -164,6 +195,47 @@ This project follows clean architecture principles and is organized into layers:
 - **Presentation Layer**: UI components (screens, widgets)
 - **Domain Layer**: Business logic and models
 - **Data Layer**: API services and repositories
+
+### Using the Design System
+
+When developing new features, use the design system components to ensure consistency:
+
+```dart
+import 'package:member_staff_app/design_system/design_system.dart';
+
+class MyWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('My Widget'),
+      ),
+      body: Padding(
+        padding: DSSpacing.insetMd,
+        child: Column(
+          children: [
+            Text('Heading', style: DSTypography.headlineMediumStyle),
+            DSSpacing.gapVerticalMd,
+            DSTextField(
+              labelText: 'Enter information',
+              hintText: 'Type here...',
+            ),
+            DSSpacing.gapVerticalLg,
+            DSButton(
+              text: 'Submit',
+              onPressed: () {
+                // Handle submission
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+```
+
+For detailed guidance on using the design system, refer to the [Design System Developer's Guide](lib/design_system/DEVELOPERS_GUIDE.md).
 
 ## Backend API
 
@@ -222,10 +294,16 @@ The project includes comprehensive test coverage for both frontend and backend c
 - **Widget Tests**: Test UI components and interactions
 - **Unit Tests**: Test business logic and data models
 - **Integration Tests**: Test API service integration
+- **Design System Tests**: Test design system components and providers
 
 Run Flutter tests with:
 ```
 flutter test
+```
+
+Run design system tests specifically with:
+```
+flutter test test/design_system_test.dart
 ```
 
 ### Laravel Tests
@@ -247,6 +325,8 @@ Detailed documentation for each feature is available in the following files:
 - **Attendance Tracking**: [MODELS_DOCUMENTATION.md](MODELS_DOCUMENTATION.md)
 - **Staff Rating System**: [ADMIN_STAFF_RATING_API.md](ADMIN_STAFF_RATING_API.md)
 - **All Dues Report**: [README_ALL_DUES_REPORT.md](README_ALL_DUES_REPORT.md)
+- **Design System**: [lib/design_system/README.md](lib/design_system/README.md)
+- **Design System Developer's Guide**: [lib/design_system/DEVELOPERS_GUIDE.md](lib/design_system/DEVELOPERS_GUIDE.md)
 - **API Documentation**: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 - **Integration Guide**: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
 - **Test Cases**: [TEST_CASES.md](TEST_CASES.md)
