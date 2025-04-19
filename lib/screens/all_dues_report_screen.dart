@@ -8,12 +8,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 import 'dart:io';
+import 'dart:math' as math;
 
 import '../models/dues_report_model.dart';
+import '../models/dues_chart_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/custom_drawer.dart';
+import '../widgets/dues_chart_widget.dart';
 import '../utils/constants.dart';
 import '../utils/snackbar_helper.dart';
 
@@ -32,18 +35,27 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   List<DuesReportItem> _duesReportItems = [];
+  List<DuesChartItem> _chartData = [];
   List<String> _buildings = [];
+  List<String> _floors = [];
   bool _isLoading = false;
   bool _isLoadingMore = false;
+  bool _isLoadingChart = false;
   bool _hasMoreData = true;
   int _currentPage = 1;
   int _totalPages = 1;
 
   // Filters
   String? _selectedBuilding;
+  String? _selectedWing;
+  String? _selectedFloor;
   DateTime? _selectedMonth;
   String? _selectedStatus;
   String _searchQuery = '';
+  double _minDueAmount = 0;
+  double _maxDueAmount = 100000;
+  RangeValues _dueAmountRange = const RangeValues(0, 100000);
+  String _selectedChartType = 'wing'; // 'wing', 'floor', 'top_members'
 
   final List<String> _statusOptions = ['All', 'Unpaid', 'Partial', 'Overdue'];
 
@@ -52,6 +64,8 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     super.initState();
     _loadDuesReport();
     _loadBuildings();
+    _loadFloors();
+    _loadChartData();
 
     // Add scroll listener for pagination
     _scrollController.addListener(() {
@@ -81,6 +95,19 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     } catch (e) {
       SnackbarHelper.showErrorSnackBar(
           context, 'Failed to load buildings: ${e.toString()}');
+    }
+  }
+
+  Future<void> _loadFloors() async {
+    try {
+      // This would typically be an API call to get the list of floors
+      // For now, we'll use a dummy list
+      setState(() {
+        _floors = ['1', '2', '3', '4', '5'];
+      });
+    } catch (e) {
+      SnackbarHelper.showErrorSnackBar(
+          context, 'Failed to load floors: ${e.toString()}');
     }
   }
 
@@ -118,6 +145,14 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
         queryParams['building'] = _selectedBuilding;
       }
 
+      if (_selectedWing != null && _selectedWing != 'All') {
+        queryParams['wing'] = _selectedWing;
+      }
+
+      if (_selectedFloor != null && _selectedFloor != 'All') {
+        queryParams['floor'] = _selectedFloor;
+      }
+
       if (_selectedMonth != null) {
         queryParams['month'] =
             DateFormat('yyyy-MM').format(_selectedMonth!);
@@ -129,6 +164,15 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
 
       if (_searchQuery.isNotEmpty) {
         queryParams['search'] = _searchQuery;
+      }
+
+      // Add due amount range filters
+      if (_minDueAmount > 0) {
+        queryParams['min_due'] = _minDueAmount.toInt().toString();
+      }
+
+      if (_maxDueAmount < 100000) {
+        queryParams['max_due'] = _maxDueAmount.toInt().toString();
       }
 
       final response = await _apiService.get(
@@ -182,6 +226,59 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
 
   Future<void> _refreshData() async {
     await _loadDuesReport(refresh: true);
+    await _loadChartData();
+  }
+
+  Future<void> _loadChartData() async {
+    setState(() {
+      _isLoadingChart = true;
+    });
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token == null) {
+        SnackbarHelper.showErrorSnackBar(context, 'You are not logged in');
+        return;
+      }
+
+      // Build query parameters
+      Map<String, dynamic> queryParams = {
+        'chart_type': _selectedChartType,
+      };
+
+      if (_selectedMonth != null) {
+        queryParams['month'] =
+            DateFormat('yyyy-MM').format(_selectedMonth!);
+      }
+
+      final response = await _apiService.get(
+        '/committee/dues-report/chart-summary',
+        queryParameters: queryParams,
+        token: token,
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        List<DuesChartItem> chartItems = data
+            .map((item) => DuesChartItem.fromJson(item))
+            .toList();
+
+        setState(() {
+          _chartData = chartItems;
+          _isLoadingChart = false;
+        });
+      } else {
+        throw Exception('Failed to load chart data');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingChart = false;
+      });
+      SnackbarHelper.showErrorSnackBar(
+          context, 'Failed to load chart data: ${e.toString()}');
+    }
   }
 
   Future<void> _exportCsv() async {
@@ -227,6 +324,14 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
         queryParams['building'] = _selectedBuilding;
       }
 
+      if (_selectedWing != null && _selectedWing != 'All') {
+        queryParams['wing'] = _selectedWing;
+      }
+
+      if (_selectedFloor != null && _selectedFloor != 'All') {
+        queryParams['floor'] = _selectedFloor;
+      }
+
       if (_selectedMonth != null) {
         queryParams['month'] =
             DateFormat('yyyy-MM').format(_selectedMonth!);
@@ -238,6 +343,15 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
 
       if (_searchQuery.isNotEmpty) {
         queryParams['search'] = _searchQuery;
+      }
+
+      // Add due amount range filters
+      if (_minDueAmount > 0) {
+        queryParams['min_due'] = _minDueAmount.toInt().toString();
+      }
+
+      if (_maxDueAmount < 100000) {
+        queryParams['max_due'] = _maxDueAmount.toInt().toString();
       }
 
       // Get the download directory
@@ -292,10 +406,15 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
   void _clearFilters() {
     setState(() {
       _selectedBuilding = null;
+      _selectedWing = null;
+      _selectedFloor = null;
       _selectedMonth = null;
       _selectedStatus = null;
       _searchQuery = '';
       _searchController.clear();
+      _minDueAmount = 0;
+      _maxDueAmount = 100000;
+      _dueAmountRange = const RangeValues(0, 100000);
     });
     _refreshData();
   }
@@ -308,7 +427,8 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
       body: Column(
         children: [
           _buildSearchBar(),
-          _buildFilters(),
+          _buildAdvancedFilters(),
+          _buildChartSection(),
           Expanded(
             child: _isLoading
                 ? Center(
@@ -376,102 +496,317 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     );
   }
 
-  Widget _buildFilters() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        children: [
-          Row(
+  Widget _buildAdvancedFilters() {
+    return ExpansionTile(
+      title: const Text('Advanced Filters'),
+      initiallyExpanded: false,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Column(
             children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Building',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+              // First row: Building and Wing
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Building',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                      ),
+                      value: _selectedBuilding,
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('All Buildings'),
+                        ),
+                        ..._buildings.map((building) {
+                          return DropdownMenuItem<String>(
+                            value: building,
+                            child: Text(building),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedBuilding = value;
+                        });
+                        _refreshData();
+                      },
+                    ),
                   ),
-                  value: _selectedBuilding,
-                  items: [
-                    const DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('All Buildings'),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Wing',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                      ),
+                      value: _selectedWing,
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('All Wings'),
+                        ),
+                        ..._buildings.map((wing) {
+                          return DropdownMenuItem<String>(
+                            value: wing,
+                            child: Text(wing),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedWing = value;
+                        });
+                        _refreshData();
+                      },
                     ),
-                    ..._buildings.map((building) {
-                      return DropdownMenuItem<String>(
-                        value: building,
-                        child: Text(building),
-                      );
-                    }).toList(),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedBuilding = value;
-                    });
-                    _refreshData();
-                  },
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8.0),
-              Expanded(
-                child: InkWell(
-                  onTap: _selectMonth,
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Month',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+              const SizedBox(height: 8.0),
+
+              // Second row: Floor and Month
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Floor',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                      ),
+                      value: _selectedFloor,
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: null,
+                          child: Text('All Floors'),
+                        ),
+                        ..._floors.map((floor) {
+                          return DropdownMenuItem<String>(
+                            value: floor,
+                            child: Text(floor),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedFloor = value;
+                        });
+                        _refreshData();
+                      },
                     ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  Expanded(
+                    child: InkWell(
+                      onTap: _selectMonth,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Month',
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _selectedMonth == null
+                                  ? 'All Months'
+                                  : DateFormat('MMM yyyy').format(_selectedMonth!),
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                            const Icon(Icons.calendar_today, size: 18),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8.0),
+
+              // Third row: Status and Amount Range
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Status',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                      ),
+                      value: _selectedStatus,
+                      items: _statusOptions.map((status) {
+                        return DropdownMenuItem<String>(
+                          value: status == 'All' ? null : status,
+                          child: Text(status),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedStatus = value;
+                        });
+                        _refreshData();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  TextButton.icon(
+                    onPressed: _clearFilters,
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('Clear Filters'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8.0),
+
+              // Fourth row: Amount Range Slider
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        const Text('Due Amount Range:'),
                         Text(
-                          _selectedMonth == null
-                              ? 'All Months'
-                              : DateFormat('MMM yyyy').format(_selectedMonth!),
-                          style: const TextStyle(fontSize: 16),
+                          '₹${_dueAmountRange.start.toInt()} - ₹${_dueAmountRange.end.toInt()}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        const Icon(Icons.calendar_today, size: 18),
                       ],
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8.0),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12.0),
+                  RangeSlider(
+                    values: _dueAmountRange,
+                    min: 0,
+                    max: 100000,
+                    divisions: 100,
+                    labels: RangeLabels(
+                      '₹${_dueAmountRange.start.toInt()}',
+                      '₹${_dueAmountRange.end.toInt()}',
+                    ),
+                    onChanged: (RangeValues values) {
+                      setState(() {
+                        _dueAmountRange = values;
+                      });
+                    },
+                    onChangeEnd: (RangeValues values) {
+                      setState(() {
+                        _minDueAmount = values.start;
+                        _maxDueAmount = values.end;
+                      });
+                      _refreshData();
+                    },
                   ),
-                  value: _selectedStatus,
-                  items: _statusOptions.map((status) {
-                    return DropdownMenuItem<String>(
-                      value: status == 'All' ? null : status,
-                      child: Text(status),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedStatus = value;
-                    });
-                    _refreshData();
-                  },
-                ),
+                ],
               ),
-              const SizedBox(width: 8.0),
-              TextButton.icon(
-                onPressed: _clearFilters,
-                icon: const Icon(Icons.clear_all),
-                label: const Text('Clear Filters'),
-              ),
+              const Divider(),
             ],
           ),
-          const Divider(),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  Widget _buildChartSection() {
+    return ExpansionTile(
+      title: const Text('Dues Summary Charts'),
+      initiallyExpanded: true,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Column(
+            children: [
+              // Chart type selector
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ChoiceChip(
+                    label: const Text('By Wing'),
+                    selected: _selectedChartType == 'wing',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedChartType = 'wing';
+                        });
+                        _loadChartData();
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8.0),
+                  ChoiceChip(
+                    label: const Text('By Floor'),
+                    selected: _selectedChartType == 'floor',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedChartType = 'floor';
+                        });
+                        _loadChartData();
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8.0),
+                  ChoiceChip(
+                    label: const Text('Top Members'),
+                    selected: _selectedChartType == 'top_members',
+                    onSelected: (selected) {
+                      if (selected) {
+                        setState(() {
+                          _selectedChartType = 'top_members';
+                        });
+                        _loadChartData();
+                      }
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8.0),
+
+              // Chart widget
+              _isLoadingChart
+                  ? SizedBox(
+                      height: 200,
+                      child: Center(
+                        child: SpinKitCircle(color: Theme.of(context).primaryColor),
+                      ),
+                    )
+                  : _chartData.isEmpty
+                      ? const SizedBox(
+                          height: 200,
+                          child: Center(
+                            child: Text('No chart data available'),
+                          ),
+                        )
+                      : _selectedChartType == 'wing' && _chartData.length <= 5
+                          ? DuesPieChartWidget(
+                              chartData: _chartData,
+                              chartTitle: 'Total Outstanding Dues by Wing',
+                            )
+                          : DuesChartWidget(
+                              chartData: _chartData,
+                              chartTitle: _getChartTitle(),
+                              chartType: _selectedChartType,
+                            ),
+              const Divider(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _getChartTitle() {
+    switch (_selectedChartType) {
+      case 'wing':
+        return 'Total Outstanding Dues by Wing';
+      case 'floor':
+        return 'Total Outstanding Dues by Floor';
+      case 'top_members':
+        return 'Top Members with Highest Dues';
+      default:
+        return 'Dues Summary';
+    }
   }
 
   Widget _buildDuesItem(DuesReportItem item) {
