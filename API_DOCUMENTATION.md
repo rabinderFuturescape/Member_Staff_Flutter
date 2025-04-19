@@ -31,20 +31,28 @@ http://localhost:8000/api
 
 ## Authentication
 
-All API requests (except for the authentication endpoints) require a valid JWT token in the Authorization header:
+All API requests (except for the authentication endpoints) require a valid JWT token issued by OneSSO (Keycloak) in the Authorization header:
 
 ```
 Authorization: Bearer your_jwt_token
 ```
 
-The JWT token should include the following claims:
+The JWT token should include the following standard claims:
+
+- `sub`: The subject identifier (user ID)
+- `iss`: The issuer of the token (Keycloak realm URL)
+- `aud`: The audience of the token (client ID)
+- `exp`: The expiration timestamp of the token
+- `iat`: The issued-at timestamp of the token
+
+And the following custom claims:
 
 - `member_id`: The ID of the authenticated member
 - `unit_id`: The ID of the member's unit
 - `company_id`: The ID of the member's company
 - `name`: The name of the authenticated member
 - `email`: The email of the authenticated member
-- `exp`: The expiration timestamp of the token
+- `realm_access.roles`: Array of realm roles assigned to the user
 
 ### Generate Test Token
 
@@ -90,15 +98,55 @@ Verifies a JWT token.
 {
   "success": true,
   "data": {
+    "sub": "00000000-0000-0000-0000-000000000000",
+    "iss": "https://sso.oneapp.in/auth/realms/oneapp",
+    "aud": "member-staff-api",
+    "exp": 1690464000,
+    "iat": 1690460400,
     "member_id": "00000000-0000-0000-0000-000000000001",
     "unit_id": "00000000-0000-0000-0000-000000000002",
     "company_id": "8454",
     "name": "Test Member",
     "email": "test@example.com",
-    "exp": 1690464000
+    "realm_access": {
+      "roles": ["member", "committee"]
+    }
   }
 }
 ```
+
+### OneSSO Integration
+
+The Member Staff module integrates with OneSSO (Keycloak) for authentication and authorization. This section describes the integration details.
+
+#### Keycloak Configuration
+
+The following environment variables are used to configure the Keycloak integration:
+
+```
+KEYCLOAK_BASE_URL=https://sso.oneapp.in
+KEYCLOAK_REALM=oneapp
+KEYCLOAK_REALM_URL=https://sso.oneapp.in/auth/realms/oneapp
+KEYCLOAK_CLIENT_ID=member-staff-api
+KEYCLOAK_PUBLIC_KEY=your_public_key_here
+```
+
+#### Token Validation
+
+The `VerifyKeycloakToken` middleware validates the JWT token by:
+
+1. Checking the token signature using the Keycloak public key
+2. Verifying the token issuer matches the configured realm URL
+3. Verifying the token audience includes the configured client ID
+4. Checking the token expiration time
+
+#### Role-Based Access Control
+
+The `CommitteeRoleMiddleware` middleware checks if the user has the required role:
+
+1. Extracts the `realm_access.roles` array from the token
+2. Checks if the array contains the 'committee' role
+3. Returns a 403 Forbidden response if the role is not present
 
 ## Staff Management
 
@@ -974,6 +1022,94 @@ Exports ratings as a CSV file (admin only).
 
 **Response**: CSV file
 
+## All Dues Report (Committee Only)
+
+The All Dues Report API provides financial reporting capabilities for committee members. These endpoints are protected by the `CommitteeRoleMiddleware` which verifies the user has the 'committee' role in their Keycloak token.
+
+### Get Dues Report
+
+**Endpoint**: `GET /committee/dues-report`
+
+**Query Parameters**:
+- `building`: Filter by building name or code (optional)
+- `wing`: Filter by wing name or code (optional)
+- `floor`: Filter by floor number (optional)
+- `month`: Filter by month in YYYY-MM format (optional)
+- `status`: Filter by payment status (unpaid, partial, overdue) (optional)
+- `search`: Search by member name or unit number (optional)
+- `min_due`: Minimum due amount (optional)
+- `max_due`: Maximum due amount (optional)
+- `page`: Page number for pagination (default: 1) (optional)
+- `per_page`: Number of records per page (default: 15) (optional)
+
+**Response**:
+```json
+{
+  "current_page": 1,
+  "data": [
+    {
+      "member_name": "John Doe",
+      "unit_number": "A-101",
+      "building_name": "Building A",
+      "bill_cycle": "Apr 2025",
+      "bill_amount": 1000,
+      "amount_paid": 0,
+      "due_amount": 1000,
+      "due_date": "2025-04-10",
+      "last_payment_date": null
+    }
+  ],
+  "first_page_url": "http://example.com/api/committee/dues-report?page=1",
+  "from": 1,
+  "last_page": 10,
+  "last_page_url": "http://example.com/api/committee/dues-report?page=10",
+  "links": [...],
+  "next_page_url": "http://example.com/api/committee/dues-report?page=2",
+  "path": "http://example.com/api/committee/dues-report",
+  "per_page": 15,
+  "prev_page_url": null,
+  "to": 15,
+  "total": 150
+}
+```
+
+### Export Dues Report
+
+**Endpoint**: `GET /committee/dues-report/export`
+
+**Query Parameters**:
+- Same filtering parameters as the Get Dues Report endpoint
+
+Exports the dues report as a CSV file.
+
+**Response**: CSV file
+
+### Get Chart Summary
+
+**Endpoint**: `GET /committee/dues-report/chart-summary`
+
+**Query Parameters**:
+- `month`: Filter by month in YYYY-MM format (optional)
+- `chart_type`: Type of chart data to return (wing, floor, top_members) (default: wing)
+
+**Response**:
+```json
+[
+  {
+    "label": "Building A",
+    "total_due": 25000
+  },
+  {
+    "label": "Building B",
+    "total_due": 12000
+  },
+  {
+    "label": "Building C",
+    "total_due": 34000
+  }
+]
+```
+
 ## Error Handling
 
 All API endpoints return a consistent error response format:
@@ -993,7 +1129,12 @@ All API endpoints return a consistent error response format:
 
 - `400 Bad Request`: Invalid request parameters
 - `401 Unauthorized`: Missing or invalid authentication token
+  - `Token has expired`: The Keycloak token has expired
+  - `Invalid token signature`: The token signature is invalid
+  - `Invalid token issuer`: The token issuer doesn't match the expected Keycloak realm URL
+  - `Invalid token audience`: The token audience doesn't include the expected client ID
 - `403 Forbidden`: Insufficient permissions
+  - `Unauthorized. Committee access required.`: The user doesn't have the 'committee' role
 - `404 Not Found`: Resource not found
 - `422 Unprocessable Entity`: Validation error
 - `500 Internal Server Error`: Server error

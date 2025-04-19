@@ -110,9 +110,11 @@ Member_Staff_Flutter/
 - **Notification Center**: Send and manage notifications to users
 
 ### Security and Integration
-- **Authentication**: Secure login with JWT token management
+- **Authentication**: Secure login with OneSSO (Keycloak) integration
 - **Role-based Access Control**: Different features for members, staff, and committee users
-- **OneApp Integration**: Seamless integration with parent OneApp using auth tokens
+- **OneApp Integration**: Seamless integration with parent OneApp using Keycloak tokens
+- **Token Validation**: Comprehensive token validation with issuer and audience verification
+- **Automatic Token Refresh**: Transparent token refresh mechanism for uninterrupted user experience
 - **Secure API Communication**: Encrypted data transfer between app and backend
 
 ## Getting Started
@@ -140,7 +142,17 @@ Member_Staff_Flutter/
    flutter pub get
    ```
 
-4. Run the app
+4. Configure OneSSO integration
+   - Update Keycloak settings in `lib/utils/constants.dart`
+   - Configure backend environment variables in `.env` file:
+   ```
+   KEYCLOAK_BASE_URL=https://sso.oneapp.in
+   KEYCLOAK_REALM=oneapp
+   KEYCLOAK_CLIENT_ID=member-staff-api
+   KEYCLOAK_PUBLIC_KEY=your_public_key_here
+   ```
+
+5. Run the app
    ```
    flutter run
    ```
@@ -159,7 +171,8 @@ The application connects to a Laravel backend API that provides comprehensive fu
 
 ### API Architecture
 - **RESTful Design**: Well-structured API endpoints following REST principles
-- **JWT Authentication**: Secure token-based authentication system
+- **OneSSO Authentication**: Secure authentication using Keycloak identity provider
+- **JWT Validation**: Comprehensive token validation with signature, issuer, and audience checks
 - **Role-based Middleware**: Ensures proper access control for different user types
 - **MySQL Database**: Robust data storage with optimized queries
 - **WebSockets**: Real-time updates using Laravel Echo Server

@@ -218,7 +218,7 @@ class MyApp extends StatelessWidget {
 
 ## Authentication Integration
 
-The Member Staff module relies on the parent OneApp's authentication system. You need to pass the authentication token to the module.
+The Member Staff module relies on the parent OneApp's authentication system through OneSSO (Keycloak). You need to pass the authentication token to the module.
 
 ### 1. Pass Authentication Token
 
@@ -262,7 +262,51 @@ Future<void> refreshToken() async {
 }
 ```
 
-### 3. Decode and Use Member Context from JWT
+### 3. OneSSO (Keycloak) Integration
+
+The Member Staff module now integrates with OneSSO (Keycloak) for authentication. This provides enhanced security and standardized authentication across all modules.
+
+#### Keycloak Configuration
+
+Ensure your Keycloak server is properly configured:
+
+1. Create a client for the Member Staff module in Keycloak
+2. Configure the client settings:
+   - Client ID: `member-staff-app`
+   - Access Type: `confidential`
+   - Valid Redirect URIs: Include your app's redirect URIs
+   - Web Origins: Configure CORS settings as needed
+
+3. Set up client roles:
+   - Create a `committee` role for users who need access to the All Dues Report
+   - Assign roles to users as needed
+
+4. Configure the Member Staff module with Keycloak settings:
+
+```dart
+// lib/utils/constants.dart
+class Constants {
+  // OneSSO (Keycloak) Configuration
+  static const String keycloakBaseUrl = 'https://sso.oneapp.in';
+  static const String keycloakRealm = 'oneapp';
+  static const String keycloakClientId = 'member-staff-app';
+}
+```
+
+#### Backend Configuration
+
+Configure the Laravel backend to validate Keycloak tokens:
+
+```php
+// .env file
+KEYCLOAK_BASE_URL=https://sso.oneapp.in
+KEYCLOAK_REALM=oneapp
+KEYCLOAK_REALM_URL=https://sso.oneapp.in/auth/realms/oneapp
+KEYCLOAK_CLIENT_ID=member-staff-api
+KEYCLOAK_PUBLIC_KEY=your_public_key_here
+```
+
+### 4. Decode and Use Member Context from JWT
 
 The Member Staff module needs to extract member context information from the JWT token:
 
@@ -336,49 +380,128 @@ Ensure your API gateway forwards authentication headers to the Member Staff API.
 
 #### JWT Token Structure
 
-The OneApp JWT token should contain the following claims:
+The OneSSO (Keycloak) JWT token should contain the following claims:
 
 ```json
 {
+  "exp": 1690464000,
+  "iat": 1690460400,
+  "auth_time": 1690460400,
+  "jti": "00000000-0000-0000-0000-000000000000",
+  "iss": "https://sso.oneapp.in/auth/realms/oneapp",
+  "aud": "member-staff-api",
+  "sub": "00000000-0000-0000-0000-000000000000",
+  "typ": "Bearer",
+  "azp": "member-staff-app",
+  "session_state": "00000000-0000-0000-0000-000000000000",
+  "acr": "1",
+  "realm_access": {
+    "roles": [
+      "committee",
+      "member"
+    ]
+  },
+  "resource_access": {
+    "member-staff-app": {
+      "roles": [
+        "committee",
+        "member"
+      ]
+    }
+  },
+  "scope": "openid profile email",
   "member_id": "00000000-0000-0000-0000-000000000001",
   "unit_id": "00000000-0000-0000-0000-000000000002",
   "company_id": "8454",
   "name": "John Doe",
-  "email": "john.doe@example.com",
-  "exp": 1690464000
+  "email": "john.doe@example.com"
 }
 ```
 
 #### Token Verification Middleware
 
-The Member Staff API uses a middleware to verify the JWT token and extract the member context:
+The Member Staff API uses a middleware to verify the Keycloak JWT token and extract the member context:
 
 ```php
-// app/Http/Middleware/VerifyJwtToken.php
+// app/Http/Middleware/VerifyKeycloakToken.php
 public function handle(Request $request, Closure $next)
 {
     try {
         $token = $request->bearerToken();
         if (!$token) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return response()->json(['success' => false, 'message' => 'Authorization token not found'], 401);
         }
 
-        // Verify token with OneApp's public key
-        $decoded = JWT::decode($token, new Key(config('auth.jwt_public_key'), 'RS256'));
+        // Get the Keycloak public key from config
+        $publicKey = config('keycloak.public_key');
 
-        // Store member context in request for later use
+        if (!$publicKey) {
+            throw new \Exception('Keycloak public key not configured');
+        }
+
+        // Format the public key correctly
+        $publicKey = "-----BEGIN PUBLIC KEY-----\n" .
+                     chunk_split($publicKey, 64, "\n") .
+                     "-----END PUBLIC KEY-----";
+
+        // Decode the token
+        $decoded = JWT::decode($token, new Key($publicKey, 'RS256'));
+
+        // Verify the token issuer
+        $expectedIssuer = config('keycloak.realm_url');
+        if ($decoded->iss !== $expectedIssuer) {
+            throw new \Exception('Invalid token issuer');
+        }
+
+        // Verify the token audience
+        $expectedAudience = config('keycloak.client_id');
+        if (!in_array($expectedAudience, (array)$decoded->aud)) {
+            throw new \Exception('Invalid token audience');
+        }
+
+        // Add the decoded token to the request
+        $request->merge(['token_payload' => (array) $decoded]);
+
+        // Extract user information from the token
         $request->merge([
-            'member_context' => [
-                'member_id' => $decoded->member_id,
-                'unit_id' => $decoded->unit_id,
-                'company_id' => $decoded->company_id
-            ]
+            'user_id' => $decoded->sub ?? null,
+            'member_id' => $decoded->member_id ?? null,
+            'unit_id' => $decoded->unit_id ?? null,
+            'company_id' => $decoded->company_id ?? null,
+            'user_roles' => $decoded->realm_access->roles ?? [],
         ]);
 
         return $next($request);
+    } catch (ExpiredException $e) {
+        return response()->json(['success' => false, 'message' => 'Token has expired'], 401);
+    } catch (SignatureInvalidException $e) {
+        return response()->json(['success' => false, 'message' => 'Invalid token signature'], 401);
     } catch (\Exception $e) {
-        return response()->json(['message' => 'Invalid token'], 401);
+        return response()->json(['success' => false, 'message' => 'Invalid token: ' . $e->getMessage()], 401);
     }
+}
+```
+
+#### Role-Based Access Control Middleware
+
+The Member Staff API uses a middleware to verify the user has the required role:
+
+```php
+// app/Http/Middleware/CommitteeRoleMiddleware.php
+public function handle(Request $request, Closure $next)
+{
+    // Get user roles from the token payload
+    $userRoles = $request->user_roles ?? [];
+
+    // Check if the user has the committee role
+    if (!in_array('committee', $userRoles)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized. Committee access required.',
+        ], 403);
+    }
+
+    return $next($request);
 }
 ```
 

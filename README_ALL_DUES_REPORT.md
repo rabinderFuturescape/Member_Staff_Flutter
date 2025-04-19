@@ -25,6 +25,15 @@ This feature allows Management Committee users to view all members' current dues
 | committee | ✅ Full Society Report |
 | member    | ❌ Only own dues (existing) |
 
+### Authentication with OneSSO
+
+The All Dues Report feature is secured using OneSSO (Keycloak) authentication:
+
+- **Token-Based Authentication**: All API requests require a valid JWT token issued by Keycloak
+- **Role-Based Access Control**: Only users with the 'committee' role can access the report
+- **Token Validation**: Tokens are validated for authenticity, expiration, and proper issuer
+- **Automatic Token Refresh**: Expired tokens are automatically refreshed when possible
+
 ## Implementation Details
 
 ### Backend (Laravel)
@@ -42,10 +51,12 @@ The backend implementation includes:
    - `GET /api/committee/dues-report/chart-summary`: Get chart data with aggregated dues information
 
 3. **Middleware**:
-   - `CommitteeMiddleware`: Ensures only committee members can access the routes
+   - `VerifyKeycloakToken`: Validates JWT tokens issued by Keycloak
+   - `CommitteeRoleMiddleware`: Ensures only committee members can access the routes
 
-4. **Policy**:
-   - `CommitteePolicy`: Defines authorization rules for committee members
+4. **Configuration**:
+   - `keycloak.php`: Contains Keycloak configuration settings
+   - Environment variables for Keycloak base URL, realm, client ID, and public key
 
 5. **Database Tables**:
    - `member_bills`: Contains bills per unit per cycle
@@ -71,11 +82,41 @@ The frontend implementation includes:
 
 3. **Services**:
    - `ApiService`: Handles API calls to the backend with pagination and filter support
+   - `OneSSOAuthService`: Manages authentication with Keycloak, including token retrieval, validation, and refresh
 
 4. **Widgets**:
    - `DuesChartWidget`: Bar chart visualization for dues data
    - `DuesPieChartWidget`: Pie chart visualization for dues data
    - Custom filter widgets with debounce mechanisms
+
+## Authentication Flow
+
+1. **User Login**:
+   - User logs in to the OneApp using OneSSO (Keycloak)
+   - Upon successful authentication, Keycloak issues a JWT token
+   - The token contains user information and roles in the payload
+
+2. **Token Storage**:
+   - The JWT token is securely stored using Flutter Secure Storage
+   - The refresh token is also stored for automatic token renewal
+
+3. **API Requests**:
+   - The `ApiService` automatically attaches the token to all API requests
+   - The token is sent in the Authorization header as a Bearer token
+
+4. **Token Validation**:
+   - The Laravel backend validates the token using the `VerifyKeycloakToken` middleware
+   - The middleware checks the token signature, expiration, issuer, and audience
+
+5. **Role Verification**:
+   - The `CommitteeRoleMiddleware` extracts roles from the validated token
+   - It verifies that the user has the 'committee' role
+   - If the role check fails, a 403 Forbidden response is returned
+
+6. **Token Refresh**:
+   - When a token expires, the `ApiService` automatically attempts to refresh it
+   - If refresh is successful, the request is retried with the new token
+   - If refresh fails, the user is redirected to the login screen
 
 ## API Response Format
 
@@ -137,21 +178,35 @@ The implementation includes comprehensive tests:
 
 1. **Backend Tests**:
    - `CommitteeDuesReportControllerTest`: Tests the controller methods
+   - `VerifyKeycloakTokenTest`: Tests the Keycloak token validation middleware
+   - `CommitteeRoleMiddlewareTest`: Tests the committee role verification
    - Tests for authorization, filtering, and CSV export
    - Tests for the new wing, floor, and due amount range filters
    - Tests for the chart summary API endpoint
 
 2. **Frontend Tests**:
    - `all_dues_report_test.dart`: Tests for the UI components and interactions
+   - `onessoauth_service_test.dart`: Tests for the OneSSO authentication service
+   - Tests for token validation, refresh, and role verification
    - Tests for filter application and auto-reload functionality
    - Tests for infinite scroll pagination with filter context preservation
    - Tests for chart type selection and visualization
+   - Tests for unauthorized access handling
 
 ## Installation and Usage
 
 1. Clone the repository
 2. Run `flutter pub get` to install dependencies
-3. Run the app using `flutter run`
+3. Configure OneSSO integration:
+   - Set up Keycloak environment variables in `.env` file:
+     ```
+     KEYCLOAK_BASE_URL=https://sso.oneapp.in
+     KEYCLOAK_REALM=oneapp
+     KEYCLOAK_CLIENT_ID=member-staff-api
+     KEYCLOAK_PUBLIC_KEY=your_public_key_here
+     ```
+   - Update Flutter constants in `lib/utils/constants.dart` if needed
+4. Run the app using `flutter run`
 
 ## Future Enhancements
 
