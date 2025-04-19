@@ -1,0 +1,321 @@
+{
+  "contentTypes": {
+    "pages": {
+      "displayName": "Page",
+      "singularName": "page",
+      "pluralName": "pages",
+      "description": "Create and manage pages for the application",
+      "attributes": {
+        "title": {
+          "type": "string",
+          "required": true,
+          "unique": true
+        },
+        "slug": {
+          "type": "uid",
+          "targetField": "title",
+          "required": true
+        },
+        "content": {
+          "type": "richtext",
+          "required": true
+        },
+        "metaTitle": {
+          "type": "string"
+        },
+        "metaDescription": {
+          "type": "text"
+        },
+        "featuredImage": {
+          "type": "media",
+          "allowedTypes": ["images"],
+          "multiple": false
+        },
+        "isPublished": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "features": {
+      "displayName": "Feature",
+      "singularName": "feature",
+      "pluralName": "features",
+      "description": "Create and manage features for the application",
+      "attributes": {
+        "title": {
+          "type": "string",
+          "required": true
+        },
+        "description": {
+          "type": "text",
+          "required": true
+        },
+        "icon": {
+          "type": "string",
+          "required": true,
+          "default": "settings"
+        },
+        "color": {
+          "type": "string",
+          "required": true,
+          "default": "#000000"
+        },
+        "route": {
+          "type": "string",
+          "required": true
+        },
+        "order": {
+          "type": "integer",
+          "default": 0
+        },
+        "isEnabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "requiresAuth": {
+          "type": "boolean",
+          "default": true
+        },
+        "requiredRoles": {
+          "type": "json",
+          "default": []
+        }
+      }
+    },
+    "settings": {
+      "displayName": "Settings",
+      "singularName": "setting",
+      "pluralName": "settings",
+      "description": "Manage application settings",
+      "attributes": {
+        "appName": {
+          "type": "string",
+          "required": true,
+          "default": "Member Staff App"
+        },
+        "appLogo": {
+          "type": "media",
+          "allowedTypes": ["images"],
+          "multiple": false
+        },
+        "themeColor": {
+          "type": "string",
+          "default": "#2196F3"
+        },
+        "primaryColor": {
+          "type": "string",
+          "default": "#2196F3"
+        },
+        "secondaryColor": {
+          "type": "string",
+          "default": "#4CAF50"
+        },
+        "accentColor": {
+          "type": "string",
+          "default": "#FFC107"
+        },
+        "backgroundColor": {
+          "type": "string",
+          "default": "#FFFFFF"
+        },
+        "textColor": {
+          "type": "string",
+          "default": "#212121"
+        },
+        "fontFamily": {
+          "type": "string",
+          "default": "Roboto"
+        },
+        "contactEmail": {
+          "type": "email"
+        },
+        "contactPhone": {
+          "type": "string"
+        },
+        "socialLinks": {
+          "type": "json",
+          "default": {}
+        },
+        "termsUrl": {
+          "type": "string"
+        },
+        "privacyUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "staff-members": {
+      "displayName": "Staff Member",
+      "singularName": "staff-member",
+      "pluralName": "staff-members",
+      "description": "Manage staff members",
+      "attributes": {
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "photo": {
+          "type": "media",
+          "allowedTypes": ["images"],
+          "multiple": false
+        },
+        "position": {
+          "type": "string",
+          "required": true
+        },
+        "contactNumber": {
+          "type": "string"
+        },
+        "email": {
+          "type": "email"
+        },
+        "address": {
+          "type": "text"
+        },
+        "idProof": {
+          "type": "media",
+          "allowedTypes": ["images", "files"],
+          "multiple": false
+        },
+        "isVerified": {
+          "type": "boolean",
+          "default": false
+        },
+        "isActive": {
+          "type": "boolean",
+          "default": true
+        },
+        "rating": {
+          "type": "decimal",
+          "default": 0
+        },
+        "totalRatings": {
+          "type": "integer",
+          "default": 0
+        },
+        "skills": {
+          "type": "json",
+          "default": []
+        },
+        "availability": {
+          "type": "json",
+          "default": {}
+        }
+      }
+    },
+    "members": {
+      "displayName": "Member",
+      "singularName": "member",
+      "pluralName": "members",
+      "description": "Manage members",
+      "attributes": {
+        "name": {
+          "type": "string",
+          "required": true
+        },
+        "photo": {
+          "type": "media",
+          "allowedTypes": ["images"],
+          "multiple": false
+        },
+        "contactNumber": {
+          "type": "string"
+        },
+        "email": {
+          "type": "email"
+        },
+        "unitNumber": {
+          "type": "string"
+        },
+        "buildingName": {
+          "type": "string"
+        },
+        "isActive": {
+          "type": "boolean",
+          "default": true
+        },
+        "role": {
+          "type": "string",
+          "default": "member"
+        },
+        "staffMembers": {
+          "type": "relation",
+          "relation": "manyToMany",
+          "target": "api::staff-member.staff-member",
+          "inversedBy": "members"
+        }
+      }
+    },
+    "notifications": {
+      "displayName": "Notification",
+      "singularName": "notification",
+      "pluralName": "notifications",
+      "description": "Manage notifications",
+      "attributes": {
+        "title": {
+          "type": "string",
+          "required": true
+        },
+        "message": {
+          "type": "text",
+          "required": true
+        },
+        "type": {
+          "type": "enumeration",
+          "enum": ["info", "success", "warning", "error"],
+          "default": "info"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "actionData": {
+          "type": "json"
+        },
+        "isRead": {
+          "type": "boolean",
+          "default": false
+        },
+        "targetUserIds": {
+          "type": "json",
+          "default": []
+        },
+        "targetRoles": {
+          "type": "json",
+          "default": []
+        }
+      }
+    },
+    "faqs": {
+      "displayName": "FAQ",
+      "singularName": "faq",
+      "pluralName": "faqs",
+      "description": "Manage frequently asked questions",
+      "attributes": {
+        "question": {
+          "type": "string",
+          "required": true
+        },
+        "answer": {
+          "type": "richtext",
+          "required": true
+        },
+        "category": {
+          "type": "string",
+          "default": "General"
+        },
+        "order": {
+          "type": "integer",
+          "default": 0
+        },
+        "isPublished": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
+  }
+}

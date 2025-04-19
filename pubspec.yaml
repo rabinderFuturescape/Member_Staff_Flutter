@@ -30,6 +30,11 @@ dependencies:
   open_file: ^3.3.2
   fl_chart: ^0.64.0
   syncfusion_flutter_charts: ^23.1.44
+  strapi_sdk: ^1.0.0
+  cached_network_image: ^3.3.0
+  html_unescape: ^2.0.0
+  flutter_html: ^3.0.0-beta.2
+  flutter_markdown: ^0.6.18
 
 dev_dependencies:
   flutter_test:
