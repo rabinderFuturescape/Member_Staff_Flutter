@@ -14,6 +14,8 @@ This application provides a complete solution for society management, including:
 - Real-time monitoring through Admin Dashboard
 - Dynamic content management through Strapi CMS integration
 - Multi-language support with localization
+- Secure real-time chat service with direct messaging, group chats, and committee rooms
+- End-to-end encrypted communication with OneSSO integration
 
 ## Project Structure
 
