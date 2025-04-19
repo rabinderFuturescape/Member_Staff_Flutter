@@ -1,0 +1,50 @@
+stages:
+  - test
+  - build
+  - sign
+  - verify
+  - attest
+  - deploy
+
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_IMAGE: ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHORT_SHA}
+
+# Include modular CI/CD configuration files
+include:
+  - local: .gitlab/ci/test-phpstan.yml
+  - local: .gitlab/ci/test-pint.yml
+  - local: .gitlab/ci/test-pest.yml
+  - local: .gitlab/ci/dockerize.yml
+  - local: .gitlab/ci/sign-cosign.yml
+  - local: .gitlab/ci/verify-cosign.yml
+  - local: .gitlab/ci/attest-slsa.yml
+
+# Deploy to production
+deploy:
+  stage: deploy
+  image: alpine:latest
+  variables:
+    GIT_STRATEGY: none
+  before_script:
+    - apk add --no-cache openssh-client bash curl
+    - eval $(ssh-agent -s)
+    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  script:
+    - echo "Deploying build $CI_COMMIT_SHORT_SHA to production..."
+    - |
+      ssh $DEPLOY_SSH_USER@$DEPLOY_SSH_HOST "
+        cd $DEPLOY_PATH && \
+        ./scripts/deploy.sh $DOCKER_IMAGE production
+      "
+  environment:
+    name: production
+  only:
+    - main
+  when: manual
+  needs:
+    - cosign-verify

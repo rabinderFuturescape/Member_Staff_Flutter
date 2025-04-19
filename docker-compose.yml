@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  app:
+    image: php:8.2-cli
+    volumes:
+      - .:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      - db
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: test_db
+      DB_USERNAME: root
+      DB_PASSWORD: secret
+    command: >
+      sh -c "
+        apt-get update && apt-get install -y git unzip libpng-dev libzip-dev zip &&
+        docker-php-ext-install pdo_mysql gd zip &&
+        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer &&
+        composer install &&
+        cp .env.testing .env &&
+        php artisan key:generate &&
+        php artisan migrate &&
+        ./vendor/bin/pest
+      "
+
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: test_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

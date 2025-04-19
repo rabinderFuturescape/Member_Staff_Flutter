@@ -1,0 +1,44 @@
+{
+  "_type": "https://in-toto.io/Statement/v0.1",
+  "subject": [
+    {
+      "name": "secure-php-app",
+      "digest": {
+        "sha256": "REPLACE-WITH-ACTUAL-SHA256"
+      }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v0.2",
+  "predicate": {
+    "builder": {
+      "id": "gitlab-ci-runner"
+    },
+    "buildType": "https://gitlab.com/buildType/docker",
+    "invocation": {
+      "configSource": {
+        "uri": "git+https://gitlab.com/your/project.git",
+        "digest": {
+          "sha1": "REPLACE-WITH-GIT-COMMIT"
+        },
+        "entryPoint": ".gitlab-ci.yml"
+      }
+    },
+    "metadata": {
+      "buildStartedOn": "2025-04-18T10:00:00Z",
+      "buildFinishedOn": "2025-04-18T10:05:00Z",
+      "completeness": {
+        "parameters": true,
+        "environment": true,
+        "materials": true
+      }
+    },
+    "materials": [
+      {
+        "uri": "git+https://gitlab.com/your/project.git",
+        "digest": {
+          "sha1": "REPLACE-WITH-GIT-COMMIT"
+        }
+      }
+    ]
+  }
+}
