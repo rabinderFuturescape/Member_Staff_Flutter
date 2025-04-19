@@ -6,59 +6,59 @@ import '../services/cms_service.dart';
 class CMSProvider extends ChangeNotifier {
   /// CMS service
   final CMSService _cmsService = CMSService();
-  
+
   /// Pages
   List<CMSPage> _pages = [];
-  
+
   /// Features
   List<CMSFeature> _features = [];
-  
+
   /// Settings
   CMSSettings? _settings;
-  
+
   /// Notifications
   List<CMSNotification> _notifications = [];
-  
+
   /// FAQs
   List<CMSFAQ> _faqs = [];
-  
+
   /// FAQ categories
   List<String> _faqCategories = [];
-  
+
   /// Loading state
   bool _isLoading = false;
-  
+
   /// Error message
   String? _errorMessage;
-  
+
   /// Get pages
   List<CMSPage> get pages => _pages;
-  
+
   /// Get features
   List<CMSFeature> get features => _features;
-  
+
   /// Get settings
   CMSSettings? get settings => _settings;
-  
+
   /// Get notifications
   List<CMSNotification> get notifications => _notifications;
-  
+
   /// Get unread notifications
-  List<CMSNotification> get unreadNotifications => 
+  List<CMSNotification> get unreadNotifications =>
       _notifications.where((notification) => !notification.isRead).toList();
-  
+
   /// Get FAQs
   List<CMSFAQ> get faqs => _faqs;
-  
+
   /// Get FAQ categories
   List<String> get faqCategories => _faqCategories;
-  
+
   /// Get loading state
   bool get isLoading => _isLoading;
-  
+
   /// Get error message
   String? get errorMessage => _errorMessage;
-  
+
   /// Initialize the CMS provider
   Future<void> initialize() async {
     await Future.wait([
@@ -66,24 +66,24 @@ class CMSProvider extends ChangeNotifier {
       loadFeatures(),
     ]);
   }
-  
+
   /// Set loading state
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
-  
+
   /// Set error message
   void _setErrorMessage(String? message) {
     _errorMessage = message;
     notifyListeners();
   }
-  
+
   /// Load pages
   Future<void> loadPages() async {
     _setLoading(true);
     _setErrorMessage(null);
-    
+
     try {
       _pages = await _cmsService.getPages(
         filters: {
@@ -99,12 +99,12 @@ class CMSProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
+
   /// Load page by slug
   Future<CMSPage?> loadPageBySlug(String slug) async {
     _setLoading(true);
     _setErrorMessage(null);
-    
+
     try {
       final page = await _cmsService.getPageBySlug(slug);
       return page;
@@ -115,12 +115,12 @@ class CMSProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
+
   /// Load features
   Future<void> loadFeatures() async {
     _setLoading(true);
     _setErrorMessage(null);
-    
+
     try {
       _features = await _cmsService.getFeatures(
         filters: {
@@ -136,12 +136,12 @@ class CMSProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
+
   /// Load settings
   Future<void> loadSettings() async {
     _setLoading(true);
     _setErrorMessage(null);
-    
+
     try {
       _settings = await _cmsService.getSettings();
       notifyListeners();
@@ -151,7 +151,7 @@ class CMSProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
+
   /// Load notifications for a user
   Future<void> loadNotifications({
     required String userId,
@@ -159,7 +159,7 @@ class CMSProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     _setErrorMessage(null);
-    
+
     try {
       _notifications = await _cmsService.getNotifications(
         userId: userId,
@@ -172,12 +172,12 @@ class CMSProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
+
   /// Mark a notification as read
   Future<bool> markNotificationAsRead(int notificationId) async {
     try {
       final success = await _cmsService.markNotificationAsRead(notificationId);
-      
+
       if (success) {
         final index = _notifications.indexWhere((n) => n.id == notificationId);
         if (index != -1) {
@@ -199,19 +199,19 @@ class CMSProvider extends ChangeNotifier {
           notifyListeners();
         }
       }
-      
+
       return success;
     } catch (e) {
       _setErrorMessage('Failed to mark notification as read: $e');
       return false;
     }
   }
-  
+
   /// Load FAQs
   Future<void> loadFAQs({String? category}) async {
     _setLoading(true);
     _setErrorMessage(null);
-    
+
     try {
       _faqs = await _cmsService.getFAQs(
         category: category,
@@ -224,12 +224,12 @@ class CMSProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
+
   /// Load FAQ categories
   Future<void> loadFAQCategories() async {
     _setLoading(true);
     _setErrorMessage(null);
-    
+
     try {
       _faqCategories = await _cmsService.getFAQCategories();
       notifyListeners();

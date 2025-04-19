@@ -12,6 +12,8 @@ This application provides a complete solution for society management, including:
 - Committee-only financial reporting with the All Dues Report feature
 - User authentication and authorization with role-based access control
 - Real-time monitoring through Admin Dashboard
+- Dynamic content management through Strapi CMS integration
+- Multi-language support with localization
 
 ## Project Structure
 
@@ -19,12 +21,25 @@ This application provides a complete solution for society management, including:
 Member_Staff_Flutter/
 ├── lib/                          # Flutter application code
 │   ├── main.dart                 # Entry point of the application
+│   ├── cms/                      # CMS integration module
+│   │   ├── config/               # CMS configuration
+│   │   ├── models/               # CMS data models
+│   │   ├── providers/            # CMS state management
+│   │   ├── screens/              # CMS UI screens
+│   │   ├── services/             # CMS services
+│   │   ├── widgets/              # CMS UI components
+│   │   ├── localization/         # Localization support
+│   │   └── schema/               # CMS schema definitions
 │   ├── models/                   # Data models
 │   │   ├── dues_chart_model.dart # Chart data models for All Dues Report
 │   │   ├── dues_report_model.dart# Dues report data models
 │   │   └── user_model.dart       # User authentication models
 │   ├── screens/                  # UI screens
-│   │   └── all_dues_report_screen.dart # All Dues Report screen
+│   │   ├── all_dues_report_screen.dart # All Dues Report screen
+│   │   ├── cms_home_screen.dart  # CMS-based home screen
+│   │   ├── cms_about_screen.dart # CMS-based about screen
+│   │   ├── cms_faq_screen.dart   # CMS-based FAQ screen
+│   │   └── cms_notification_screen.dart # CMS-based notification screen
 │   ├── services/                 # API and other services
 │   │   └── api_service.dart      # API communication service
 │   ├── utils/                    # Utility functions and constants
@@ -36,6 +51,7 @@ Member_Staff_Flutter/
 │   │   └── dues_chart_widget.dart# Chart visualization widget
 │   └── src/                      # Core application code
 │       ├── app.dart              # Main application widget
+│       ├── cms_app.dart          # CMS-based application widget
 │       ├── features/             # Feature modules
 │       │   └── member_staff/     # Member Staff feature module
 │       │       ├── api/          # API clients for Member Staff
@@ -109,6 +125,14 @@ Member_Staff_Flutter/
 - **User Management**: Manage user roles and permissions
 - **Notification Center**: Send and manage notifications to users
 
+### Strapi CMS Integration
+- **Dynamic Content Management**: Manage content through a headless CMS without code changes
+- **Content Types**: Pre-defined content types for pages, features, settings, notifications, and FAQs
+- **CMS Console**: Built-in console for managing content directly from the app
+- **Offline Support**: Caching of CMS content for offline use
+- **Authentication Integration**: Secure access to CMS content with token-based authentication
+- **Multi-language Support**: Content localization with language switching
+
 ### Security and Integration
 - **Authentication**: Secure login with OneSSO (Keycloak) integration
 - **Role-based Access Control**: Different features for members, staff, and committee users
@@ -152,7 +176,27 @@ Member_Staff_Flutter/
    KEYCLOAK_PUBLIC_KEY=your_public_key_here
    ```
 
-5. Run the app
+5. Set up Strapi CMS (optional)
+   - Install Strapi globally:
+   ```
+   npm install -g strapi
+   ```
+   - Create a new Strapi project:
+   ```
+   npx create-strapi-app@latest my-project
+   ```
+   - Start the Strapi server:
+   ```
+   cd my-project
+   npm run develop
+   ```
+   - Configure the CMS in `lib/cms/config/cms_config.dart`:
+   ```dart
+   static const String baseUrl = 'http://your-strapi-url:1337';
+   static const String apiToken = 'your-strapi-api-token';
+   ```
+
+6. Run the app
    ```
    flutter run
    ```
@@ -247,6 +291,8 @@ Detailed documentation for each feature is available in the following files:
 - **Attendance Tracking**: [MODELS_DOCUMENTATION.md](MODELS_DOCUMENTATION.md)
 - **Staff Rating System**: [ADMIN_STAFF_RATING_API.md](ADMIN_STAFF_RATING_API.md)
 - **All Dues Report**: [README_ALL_DUES_REPORT.md](README_ALL_DUES_REPORT.md)
+- **Strapi CMS Integration**: [README_STRAPI_CMS.md](README_STRAPI_CMS.md)
+- **CMS Localization**: [lib/cms/localization/README.md](lib/cms/localization/README.md)
 - **API Documentation**: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 - **Integration Guide**: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
 - **Test Cases**: [TEST_CASES.md](TEST_CASES.md)

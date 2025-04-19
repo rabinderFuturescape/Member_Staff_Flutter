@@ -9,6 +9,7 @@ import 'src/providers/auth_provider.dart';
 import 'src/providers/notification_provider.dart';
 import 'screens/all_dues_report_screen.dart';
 import 'cms/cms.dart';
+import 'cms/providers/cms_localization_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +30,7 @@ void main() async {
 }
 
 /// Launch the CMS-based app
-void launchCMSBasedApp() {
+Future<void> launchCMSBasedApp() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize providers
@@ -41,7 +42,11 @@ void launchCMSBasedApp() {
 
   // Initialize CMS provider
   final cmsProvider = CMSProvider();
-  cmsProvider.initialize();
+  await cmsProvider.initialize();
+
+  // Initialize localization provider
+  final localizationProvider = CMSLocalizationProvider();
+  await localizationProvider.initialize();
 
   runApp(
     MultiProvider(
@@ -49,6 +54,7 @@ void launchCMSBasedApp() {
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider.value(value: notificationProvider),
         ChangeNotifierProvider.value(value: cmsProvider),
+        ChangeNotifierProvider.value(value: localizationProvider),
       ],
       child: const CMSBasedApp(),
     ),

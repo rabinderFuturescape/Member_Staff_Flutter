@@ -6,6 +6,9 @@ import 'package:month_year_picker/month_year_picker.dart';
 import 'providers/auth_provider.dart';
 import 'providers/notification_provider.dart';
 import '../cms/cms.dart';
+import '../cms/providers/cms_localization_provider.dart';
+import '../cms/localization/cms_localization_delegate.dart';
+import '../cms/localization/cms_localizations.dart';
 import '../screens/cms_home_screen.dart';
 import '../screens/cms_about_screen.dart';
 import '../screens/cms_faq_screen.dart';
@@ -68,16 +71,14 @@ class CMSBasedApp extends StatelessWidget {
           ),
         ),
       ),
-      localizationsDelegates: const [
+      localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
         MonthYearPickerLocalizations.delegate,
+        CMSLocalizationsDelegate(provider: Provider.of<CMSLocalizationProvider>(context)),
       ],
-      supportedLocales: const [
-        Locale('en', 'US'),
-        Locale('hi', 'IN'),
-      ],
+      supportedLocales: Provider.of<CMSLocalizationProvider>(context).availableLocales,
       home: const CMSHomeScreen(),
       routes: {
         '/home': (context) => const CMSHomeScreen(),
