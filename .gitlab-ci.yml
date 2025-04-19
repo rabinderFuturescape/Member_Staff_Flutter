@@ -1,17 +1,33 @@
 stages:
+  - test
   - build
   - encode
   - dockerize
+  - sign
+  - verify
+  - attest
   - deploy
 
 variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_IMAGE: registry.example.com/secure-laravel-app
 
+# Include modular CI/CD configuration files
+include:
+  - local: .gitlab/ci/test-phpstan.yml
+  - local: .gitlab/ci/test-pint.yml
+  - local: .gitlab/ci/test-pest.yml
+  - local: .gitlab/ci/dockerize.yml
+  - local: .gitlab/ci/sign-cosign.yml
+  - local: .gitlab/ci/attest-slsa.yml
+  - local: .gitlab/ci/deploy.yml
+
 # 🔨 Build Laravel (optional if using Composer or JS assets)
 build_laravel:
   image: composer:2
   stage: build
+  before_script:
+    - apt-get update && apt-get install -y git nodejs npm
   script:
     - composer install --no-dev --optimize-autoloader
     - npm ci
@@ -22,6 +38,14 @@ build_laravel:
       - bootstrap/cache/
       - public/build/
       - node_modules/
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-composer
+    paths:
+      - vendor/
+  needs:
+    - phpstan
+    - pint
+    - pest
 
 # 🔐 Encode Laravel PHP files using ionCube
 encode_php:
@@ -50,39 +74,3 @@ encode_php:
       - encoded-src/
   needs:
     - build_laravel
-
-# 🐳 Dockerize using encoded source
-dockerize:
-  image: docker:24
-  stage: dockerize
-  services:
-    - docker:dind
-  script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
-    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA -t $DOCKER_IMAGE:latest .
-    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
-    - docker push $DOCKER_IMAGE:latest
-  needs:
-    - encode_php
-
-# 🚀 Deploy (Kubernetes, ECS, SSH etc.)
-deploy:
-  stage: deploy
-  image: alpine:latest
-  before_script:
-    - apk add --no-cache bash openssh-client
-    - eval $(ssh-agent -s)
-    - echo "$DEPLOY_SSH_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo "$DEPLOY_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
-  script:
-    - echo "Deploying build $CI_COMMIT_SHORT_SHA..."
-    - ssh $DEPLOY_SSH_USER@$DEPLOY_SSH_HOST "cd /var/www/app && ./deploy.sh $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA"
-  environment:
-    name: production
-  only:
-    - main
-  needs:
-    - dockerize
