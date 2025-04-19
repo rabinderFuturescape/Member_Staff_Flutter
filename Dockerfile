@@ -1,4 +1,48 @@
+# Build stage
+FROM composer:2 AS composer
+
+WORKDIR /app
+
+# Copy only the files needed for composer install
+COPY composer.json composer.lock ./
+
+# Install dependencies
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# Node.js build stage (if needed)
+FROM node:18-alpine AS node
+
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy the rest of the application code
+COPY . .
+
+# Build assets
+RUN npm run build
+
+# Final stage
 FROM php:8.2-fpm-alpine
+
+# Build arguments
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+# Labels
+LABEL org.opencontainers.image.created=${BUILD_DATE} \
+      org.opencontainers.image.title="Secure Laravel App" \
+      org.opencontainers.image.description="Secure Laravel application with ionCube encoding" \
+      org.opencontainers.image.url="https://github.com/rabinderFuturescape/Member_Staff_Flutter" \
+      org.opencontainers.image.revision=${VCS_REF} \
+      org.opencontainers.image.version=${VERSION} \
+      org.opencontainers.image.vendor="Your Organization" \
+      org.opencontainers.image.licenses="MIT"
 
 # Install dependencies
 RUN apk add --no-cache \
@@ -36,6 +80,14 @@ RUN mkdir -p /var/www/html /run/nginx /var/log/nginx
 
 # Copy encoded Laravel code
 COPY encoded-src/ /var/www/html
+
+# Copy vendor directory from composer stage
+COPY --from=composer /app/vendor/ /var/www/html/vendor/
+
+# Copy built assets from node stage
+COPY --from=node /app/public/build/ /var/www/html/public/build/
+
+# Copy startup script
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
@@ -43,6 +95,13 @@ RUN chmod +x /start.sh
 RUN addgroup -g 1000 www && \
     adduser -G www -g www -s /bin/sh -D www && \
     chown -R www:www /var/www/html /var/log/nginx /run/nginx
+
+# Security hardening
+RUN apk del curl && \
+    rm -rf /var/cache/apk/* && \
+    find /var/www/html -type d -exec chmod 755 {} \; && \
+    find /var/www/html -type f -exec chmod 644 {} \; && \
+    chmod 755 /start.sh
 
 # Switch to non-root user
 USER www
@@ -52,6 +111,10 @@ WORKDIR /var/www/html
 
 # Expose port 80
 EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
 
 # Start services
 CMD ["/start.sh"]

@@ -1,0 +1,39 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "web" middleware group. Make something great!
+|
+*/
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+// Health check endpoint for Docker container
+Route::get('/health', function () {
+    try {
+        // Check database connection
+        DB::connection()->getPdo();
+        
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'Application is healthy',
+            'timestamp' => now()->toIso8601String(),
+            'version' => config('app.version', '1.0.0'),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Database connection failed: ' . $e->getMessage(),
+            'timestamp' => now()->toIso8601String(),
+        ], 500);
+    }
+});
