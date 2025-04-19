@@ -1,0 +1,36 @@
+pest:
+  image: php:8.2-cli
+  stage: test
+  services:
+    - mysql:5.7
+  variables:
+    DB_CONNECTION: mysql
+    DB_HOST: mysql
+    DB_PORT: 3306
+    DB_DATABASE: test_db
+    DB_USERNAME: root
+    DB_PASSWORD: secret
+    MYSQL_DATABASE: test_db
+    MYSQL_ROOT_PASSWORD: secret
+  before_script:
+    - apt-get update && apt-get install -y git unzip curl libpng-dev libzip-dev zip
+    - docker-php-ext-install pdo_mysql gd zip
+    - curl -sS https://getcomposer.org/installer | php
+    - php composer.phar install
+    - cp .env.testing .env
+    - php artisan key:generate
+    - php artisan migrate --force
+  script:
+    - ./vendor/bin/pest --coverage --min=80
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-composer
+    paths:
+      - vendor/
+  artifacts:
+    paths:
+      - coverage/
+    when: always
+    expire_in: 1 week
+  only:
+    - merge_requests
+    - main

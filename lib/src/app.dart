@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:month_year_picker/month_year_picker.dart';
+
 import 'screens/home_screen.dart';
+import '../screens/all_dues_report_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/notification_provider.dart';
 
@@ -69,7 +73,20 @@ class MemberStaffApp extends StatelessWidget {
             ),
           ),
         ),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          MonthYearPickerLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en', 'US'),
+          Locale('hi', 'IN'),
+        ],
         home: const HomeScreen(),
+        routes: {
+          '/all-dues-report': (context) => const AllDuesReportScreen(),
+        },
       ),
     );
   }

@@ -1,0 +1,377 @@
+{
+	"info": {
+		"_postman_id": "a5e7b8c9-d0e1-4f23-a456-b789c0d1e2f3",
+		"name": "Staff Rating API",
+		"description": "A collection of API endpoints for the Staff Rating feature.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Member Endpoints",
+			"item": [
+				{
+					"name": "Get All Ratings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/staff/ratings?staff_type=member&rating=4",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"ratings"
+							],
+							"query": [
+								{
+									"key": "staff_type",
+									"value": "member"
+								},
+								{
+									"key": "rating",
+									"value": "4"
+								}
+							]
+						},
+						"description": "Get all ratings for the authenticated user."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Rating",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"staff_id\": 201,\n    \"staff_type\": \"member\",\n    \"rating\": 4,\n    \"feedback\": \"Great service!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/staff/ratings",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"ratings"
+							]
+						},
+						"description": "Create a new rating for a staff member."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rating",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/staff/ratings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"ratings",
+								"1"
+							]
+						},
+						"description": "Get a specific rating by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Rating",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rating\": 5,\n    \"feedback\": \"Excellent service!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/staff/ratings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"ratings",
+								"1"
+							]
+						},
+						"description": "Update an existing rating."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Rating",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/staff/ratings/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"staff",
+								"ratings",
+								"1"
+							]
+						},
+						"description": "Delete a rating."
+					},
+					"response": []
+				}
+			],
+			"description": "API endpoints for members to manage their ratings."
+		},
+		{
+			"name": "Admin Endpoints",
+			"item": [
+				{
+					"name": "Get All Staff Ratings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/staff/ratings?staff_type=member&min_rating=4&search=Jane",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"staff",
+								"ratings"
+							],
+							"query": [
+								{
+									"key": "staff_type",
+									"value": "member"
+								},
+								{
+									"key": "min_rating",
+									"value": "4"
+								},
+								{
+									"key": "search",
+									"value": "Jane"
+								}
+							]
+						},
+						"description": "Get aggregated ratings for all staff members."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Detailed Staff Rating",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/staff/201/ratings?staff_type=member",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"staff",
+								"201",
+								"ratings"
+							],
+							"query": [
+								{
+									"key": "staff_type",
+									"value": "member"
+								}
+							]
+						},
+						"description": "Get detailed rating information for a specific staff member."
+					},
+					"response": []
+				},
+				{
+					"name": "Export Staff Ratings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/staff/ratings/export?staff_type=member&min_rating=4&search=Jane",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"staff",
+								"ratings",
+								"export"
+							],
+							"query": [
+								{
+									"key": "staff_type",
+									"value": "member"
+								},
+								{
+									"key": "min_rating",
+									"value": "4"
+								},
+								{
+									"key": "search",
+									"value": "Jane"
+								}
+							]
+						},
+						"description": "Export staff ratings as a CSV file."
+					},
+					"response": []
+				}
+			],
+			"description": "API endpoints for administrators to manage staff ratings."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "your_auth_token_here",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "your_admin_auth_token_here",
+			"type": "string"
+		}
+	]
+}

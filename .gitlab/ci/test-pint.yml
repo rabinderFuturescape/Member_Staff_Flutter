@@ -1,0 +1,21 @@
+pint:
+  image: php:8.2-cli
+  stage: test
+  before_script:
+    - apt-get update && apt-get install -y git unzip curl
+    - curl -sS https://getcomposer.org/installer | php
+    - php composer.phar install
+  script:
+    - ./vendor/bin/pint --test
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}-composer
+    paths:
+      - vendor/
+  artifacts:
+    paths:
+      - pint-report.txt
+    when: always
+    expire_in: 1 week
+  only:
+    - merge_requests
+    - main

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'staff/staff_list_screen.dart';
 import 'settings/settings_screen.dart';
 import 'staff/staff_verification_flow/staff_verification_flow.dart';
+import '../../screens/all_dues_report_screen.dart';
+import '../providers/auth_provider.dart';
 
 /// The home screen of the application.
 class HomeScreen extends StatelessWidget {
@@ -41,6 +44,9 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildFeatureGrid(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final isCommitteeMember = authProvider.user?.role == 'committee';
+
     return Expanded(
       child: GridView.count(
         crossAxisCount: 2,
@@ -67,6 +73,17 @@ class HomeScreen extends StatelessWidget {
               MaterialPageRoute(builder: (context) => const StaffVerificationFlow()),
             ),
           ),
+          if (isCommitteeMember)
+            _buildFeatureCard(
+              context,
+              'All Dues Report',
+              Icons.receipt_long,
+              Colors.red,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AllDuesReportScreen()),
+              ),
+            ),
           _buildFeatureCard(
             context,
             'Schedule',
