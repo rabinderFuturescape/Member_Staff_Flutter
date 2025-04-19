@@ -11,9 +11,10 @@ This document provides a comprehensive overview of all API endpoints used in the
 5. [Member-Staff Assignment](#member-staff-assignment)
 6. [Admin Dashboard](#admin-dashboard)
 7. [Staff Rating](#staff-rating)
-8. [Error Handling](#error-handling)
-9. [API Client](#api-client)
-10. [API Models](#api-models)
+8. [Feature Request](#feature-request)
+9. [Error Handling](#error-handling)
+10. [API Client](#api-client)
+11. [API Models](#api-models)
 
 ## Base URL
 
@@ -1218,6 +1219,146 @@ class ApiException implements Exception {
     this.isAuthError = false,
     this.errors,
   });
+}
+```
+
+## Feature Request
+
+The Feature Request API allows users to request new features for the application, search for existing feature requests, and upvote them.
+
+### List Feature Requests
+
+**Endpoint**: `GET /feature-requests`
+
+**Query Parameters**:
+- `sort_by`: Field to sort by (default: 'votes') (optional)
+- `sort_order`: Sort order ('asc' or 'desc', default: 'desc') (optional)
+- `per_page`: Number of results per page (default: 10) (optional)
+- `page`: Page number (default: 1) (optional)
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "feature_title": "WhatsApp Bill Reminders",
+      "description": "Send bill reminders via WhatsApp",
+      "votes": 36,
+      "created_by": 202,
+      "created_at": "2024-04-21T10:00:00.000Z",
+      "updated_at": "2024-04-21T10:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "feature_title": "Separate Vendor Login",
+      "description": null,
+      "votes": 24,
+      "created_by": 105,
+      "created_at": "2024-04-20T15:30:00.000Z",
+      "updated_at": "2024-04-21T09:45:00.000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 5,
+    "per_page": 10,
+    "total": 42
+  }
+}
+```
+
+### Get Feature Request Suggestions
+
+**Endpoint**: `GET /feature-requests/suggest`
+
+**Query Parameters**:
+- `q`: Search query (required, minimum 2 characters)
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "feature_title": "WhatsApp Bill Reminders",
+      "votes": 36
+    },
+    {
+      "id": 3,
+      "feature_title": "WhatsApp Notifications for Visitors",
+      "votes": 18
+    }
+  ]
+}
+```
+
+### Create Feature Request
+
+**Endpoint**: `POST /feature-requests`
+
+**Request Body**:
+```json
+{
+  "feature_title": "Dark Mode Support",
+  "description": "Add dark mode theme to reduce eye strain at night"
+}
+```
+
+**Response (New Feature)**:
+```json
+{
+  "message": "Feature request created successfully",
+  "data": {
+    "id": 5,
+    "feature_title": "Dark Mode Support",
+    "description": "Add dark mode theme to reduce eye strain at night",
+    "votes": 1,
+    "created_by": 202,
+    "created_at": "2024-04-22T14:30:00.000Z",
+    "updated_at": "2024-04-22T14:30:00.000Z"
+  },
+  "is_new": true
+}
+```
+
+**Response (Existing Feature)**:
+```json
+{
+  "message": "Vote added to existing feature request",
+  "data": {
+    "id": 1,
+    "feature_title": "WhatsApp Bill Reminders",
+    "description": "Send bill reminders via WhatsApp",
+    "votes": 37,
+    "created_by": 202,
+    "created_at": "2024-04-21T10:00:00.000Z",
+    "updated_at": "2024-04-22T14:30:00.000Z"
+  },
+  "is_new": false
+}
+```
+
+### Upvote Feature Request
+
+**Endpoint**: `POST /feature-requests/{id}/vote`
+
+**Path Parameters**:
+- `id`: The ID of the feature request (required)
+
+**Response**:
+```json
+{
+  "message": "Vote added successfully",
+  "data": {
+    "id": 2,
+    "feature_title": "Separate Vendor Login",
+    "description": null,
+    "votes": 25,
+    "created_by": 105,
+    "created_at": "2024-04-20T15:30:00.000Z",
+    "updated_at": "2024-04-22T14:35:00.000Z"
+  }
 }
 ```
 

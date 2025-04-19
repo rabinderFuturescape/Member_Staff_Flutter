@@ -53,12 +53,18 @@ Member_Staff_Flutter/
 │       ├── app.dart              # Main application widget
 │       ├── cms_app.dart          # CMS-based application widget
 │       ├── features/             # Feature modules
-│       │   └── member_staff/     # Member Staff feature module
-│       │       ├── api/          # API clients for Member Staff
-│       │       ├── models/       # Data models for Member Staff
-│       │       ├── screens/      # UI screens for Member Staff
-│       │       ├── services/     # Services for Member Staff
-│       │       └── widgets/      # Widgets for Member Staff
+│       │   ├── member_staff/     # Member Staff feature module
+│       │   │   ├── api/          # API clients for Member Staff
+│       │   │   ├── models/       # Data models for Member Staff
+│       │   │   ├── screens/      # UI screens for Member Staff
+│       │   │   ├── services/     # Services for Member Staff
+│       │   │   └── widgets/      # Widgets for Member Staff
+│       │   └── feature_request/  # Feature Request module
+│       │       ├── api/          # API clients for Feature Request
+│       │       ├── models/       # Data models for Feature Request
+│       │       ├── screens/      # UI screens for Feature Request
+│       │       ├── providers/    # State management for Feature Request
+│       │       └── widgets/      # Widgets for Feature Request
 │       └── core/                 # Core functionality
 │           ├── auth/             # Authentication
 │           ├── models/           # Core data models
@@ -87,6 +93,13 @@ Member_Staff_Flutter/
 ```
 
 ## Features
+
+### Feature Request System
+- **Request New Features**: Users can request new features for the application
+- **Search Existing Requests**: Search for existing feature requests with auto-suggestions
+- **Upvote System**: Upvote existing feature requests to show interest
+- **Request Tracking**: Track the status and popularity of feature requests
+- **Admin Dashboard**: View and manage feature requests through the admin interface
 
 ### Member Staff Module
 - **Member Management**: Add, edit, view, and delete member information
@@ -293,6 +306,7 @@ Detailed documentation for each feature is available in the following files:
 - **All Dues Report**: [README_ALL_DUES_REPORT.md](README_ALL_DUES_REPORT.md)
 - **Strapi CMS Integration**: [README_STRAPI_CMS.md](README_STRAPI_CMS.md)
 - **CMS Localization**: [lib/cms/localization/README.md](lib/cms/localization/README.md)
+- **Feature Request Module**: [lib/src/features/feature_request/README.md](lib/src/features/feature_request/README.md)
 - **API Documentation**: [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 - **Integration Guide**: [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md)
 - **Test Cases**: [TEST_CASES.md](TEST_CASES.md)

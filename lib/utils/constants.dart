@@ -16,6 +16,7 @@ class Constants {
   static const String loginRoute = '/login';
   static const String homeRoute = '/home';
   static const String duesReportRoute = '/all-dues-report';
+  static const String featureRequestRoute = '/feature-request';
 
   // Assets
   static const String logoPath = 'assets/images/logo.png';

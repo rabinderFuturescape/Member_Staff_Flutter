@@ -7,6 +7,7 @@ import 'screens/home_screen.dart';
 import '../screens/all_dues_report_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/notification_provider.dart';
+import 'features/feature_request/feature_request_module.dart';
 
 /// The main application widget.
 class MemberStaffApp extends StatelessWidget {
@@ -86,6 +87,9 @@ class MemberStaffApp extends StatelessWidget {
         home: const HomeScreen(),
         routes: {
           '/all-dues-report': (context) => const AllDuesReportScreen(),
+          '/feature-request': (context) => const FeatureRequestModule(
+                baseUrl: 'https://api.onesociety.com/api',
+              ),
         },
       ),
     );

@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AdminStaffRatingController;
 use App\Http\Controllers\API\CommitteeDuesReportController;
+use App\Http\Controllers\API\FeatureRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,14 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 Route::middleware(['auth:sanctum', 'committee'])->group(function () {
     Route::get('/committee/dues-report', [CommitteeDuesReportController::class, 'index']);
     Route::get('/committee/dues-report/export', [CommitteeDuesReportController::class, 'exportCsv']);
+});
+
+// Feature Request Routes
+Route::prefix('feature-requests')->middleware(['auth:sanctum'])->group(function () {
+    Route::get('/', [FeatureRequestController::class, 'index']);
+    Route::get('/suggest', [FeatureRequestController::class, 'suggest']);
+    Route::post('/', [FeatureRequestController::class, 'store']);
+    Route::post('/{id}/vote', [FeatureRequestController::class, 'vote']);
 });
 
 // Include other route files

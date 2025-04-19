@@ -5,6 +5,8 @@ import 'settings/settings_screen.dart';
 import 'staff/staff_verification_flow/staff_verification_flow.dart';
 import '../../screens/all_dues_report_screen.dart';
 import '../providers/auth_provider.dart';
+import '../features/feature_request/feature_request_module.dart';
+import '../../utils/constants.dart';
 
 /// The home screen of the application.
 class HomeScreen extends StatelessWidget {
@@ -99,6 +101,16 @@ class HomeScreen extends StatelessWidget {
             () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            ),
+          ),
+          _buildFeatureCard(
+            context,
+            'Request a Feature',
+            Icons.lightbulb_outline,
+            Colors.amber,
+            () => Navigator.pushNamed(
+              context,
+              Constants.featureRequestRoute,
             ),
           ),
         ],
