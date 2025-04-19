@@ -1,6 +1,6 @@
 # Chat Service Feature
 
-This module provides a complete chat service with real-time messaging capabilities, powered by Supabase. It includes direct messaging, group chats, and public discussion rooms.
+This module provides a complete chat service with real-time messaging capabilities, powered by Supabase and integrated with OneSSO (Keycloak) authentication. It includes direct messaging, group chats, and public discussion rooms.
 
 ## Features
 
@@ -11,6 +11,9 @@ This module provides a complete chat service with real-time messaging capabiliti
 - View chat history
 - Leave chat rooms
 - User presence indicators
+- Secure authentication with OneSSO (Keycloak)
+- Token-based authorization
+- Automatic token refresh
 
 ## Architecture
 
@@ -18,6 +21,7 @@ The Chat Service feature follows a clean architecture approach:
 
 - **Models**: Data classes representing chat messages, rooms, and users
 - **API**: Service layer for interacting with Supabase
+- **Services**: Authentication and other business logic services
 - **Providers**: State management using the Provider pattern
 - **Pages**: UI screens for the chat functionality
 - **Widgets**: Reusable UI components
@@ -70,7 +74,15 @@ MultiProvider(
 await ChatServiceModule.initialize();
 ```
 
-4. Execute the SQL schema in your Supabase project:
+4. Configure OneSSO (Keycloak) integration:
+```dart
+// In your constants.dart file
+static const String keycloakBaseUrl = 'https://sso.oneapp.in';
+static const String keycloakRealm = 'oneapp';
+static const String keycloakClientId = 'member-staff-app';
+```
+
+5. Execute the SQL schema in your Supabase project:
 ```sql
 -- Run the SQL from ChatServiceModule.getDatabaseSchema()
 ```
@@ -101,6 +113,9 @@ Navigator.pushNamed(context, ChatConstants.createRoomRoute);
 - `supabase_flutter`: For Supabase integration and real-time functionality
 - `provider`: For state management
 - `timeago`: For formatting message timestamps
+- `flutter_secure_storage`: For securely storing authentication tokens
+- `jwt_decoder`: For decoding and validating JWT tokens
+- `http`: For making HTTP requests to the OneSSO server
 
 ## Screenshots
 

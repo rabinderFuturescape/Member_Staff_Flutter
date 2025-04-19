@@ -35,6 +35,8 @@ dependencies:
   html_unescape: ^2.0.0
   flutter_html: ^3.0.0-beta.2
   flutter_markdown: ^0.6.18
+  supabase_flutter: ^1.10.25
+  timeago: ^3.6.0
 
 dev_dependencies:
   flutter_test:

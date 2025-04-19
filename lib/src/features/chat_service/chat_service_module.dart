@@ -4,16 +4,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/chat_list_page.dart';
 import 'pages/chat_room_page.dart';
 import 'pages/create_room_page.dart';
-import 'providers/chat_provider.dart';
+import 'providers/keycloak_chat_provider.dart';
+import 'services/chat_auth_service.dart';
 import 'utils/chat_constants.dart';
 
 /// Module for Chat Service feature
 class ChatServiceModule {
   /// Private constructor to prevent instantiation
   ChatServiceModule._();
-  
+
   /// Register routes for this module
-  static Map<String, WidgetBuilder> getRoutes() {
+  static Map<String, Widget Function(BuildContext)> getRoutes() {
     return {
       ChatConstants.chatListRoute: (context) => const ChatListPage(),
       ChatConstants.chatRoomRoute: (context) {
@@ -21,27 +22,36 @@ class ChatServiceModule {
         return ChatRoomPage(roomId: args['roomId']);
       },
       ChatConstants.createRoomRoute: (context) => const CreateRoomPage(),
+      ChatConstants.oneSSOLoginRoute: (context) => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      ChatConstants.oneSSOCallbackRoute: (context) => const Scaffold(
+        body: Center(child: Text('Processing authentication...')),
+      ),
     };
   }
-  
+
   /// Register providers for this module
-  static List<SingleChildWidget> getProviders() {
+  static List<dynamic> getProviders() {
     return [
-      ChangeNotifierProvider<ChatProvider>(
-        create: (context) => ChatProvider(
+      ChangeNotifierProvider<KeycloakChatProvider>(
+        create: (context) => KeycloakChatProvider(
           supabase: Supabase.instance.client,
-          currentUserId: Supabase.instance.client.auth.currentUser!.id,
+          authService: ChatAuthService(),
         ),
       ),
     ];
   }
-  
+
   /// Initialize the module
   static Future<void> initialize() async {
-    // Any initialization logic can go here
-    // For example, setting up Supabase realtime subscriptions
+    // Initialize Supabase
+    await Supabase.initialize(
+      url: ChatConstants.supabaseUrl,
+      anonKey: ChatConstants.supabaseAnonKey,
+    );
   }
-  
+
   /// Create SQL schema for the module
   static String getDatabaseSchema() {
     return '''
