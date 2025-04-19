@@ -23,7 +23,7 @@ class CommitteeDuesReportControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create buildings, units, members, bills, and payments
         $this->createTestData();
     }
@@ -132,13 +132,13 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a committee user
         $committeeUser = User::factory()->create(['role' => 'committee']);
-        
+
         // Act as the committee user
         Sanctum::actingAs($committeeUser);
-        
+
         // Make the request
         $response = $this->getJson('/api/committee/dues-report');
-        
+
         // Assert the response
         $response->assertStatus(200)
                  ->assertJsonStructure([
@@ -177,13 +177,13 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a regular user
         $regularUser = User::factory()->create(['role' => 'member']);
-        
+
         // Act as the regular user
         Sanctum::actingAs($regularUser);
-        
+
         // Make the request
         $response = $this->getJson('/api/committee/dues-report');
-        
+
         // Assert the response
         $response->assertStatus(403);
     }
@@ -195,13 +195,13 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a committee user
         $committeeUser = User::factory()->create(['role' => 'committee']);
-        
+
         // Act as the committee user
         Sanctum::actingAs($committeeUser);
-        
+
         // Make the request with building filter
         $response = $this->getJson('/api/committee/dues-report?building=A');
-        
+
         // Assert the response
         $response->assertStatus(200)
                  ->assertJsonStructure([
@@ -219,7 +219,7 @@ class CommitteeDuesReportControllerTest extends TestCase
                          ]
                      ],
                  ]);
-        
+
         // Check that only Building A units are returned
         $data = $response->json('data');
         foreach ($data as $item) {
@@ -234,16 +234,16 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a committee user
         $committeeUser = User::factory()->create(['role' => 'committee']);
-        
+
         // Act as the committee user
         Sanctum::actingAs($committeeUser);
-        
+
         // Make the request with month filter
         $response = $this->getJson('/api/committee/dues-report?month=2025-04');
-        
+
         // Assert the response
         $response->assertStatus(200);
-        
+
         // Check that only April 2025 bills are returned
         $data = $response->json('data');
         foreach ($data as $item) {
@@ -258,33 +258,106 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a committee user
         $committeeUser = User::factory()->create(['role' => 'committee']);
-        
+
         // Act as the committee user
         Sanctum::actingAs($committeeUser);
-        
+
         // Make the request with status filter (unpaid)
         $response = $this->getJson('/api/committee/dues-report?status=unpaid');
-        
+
         // Assert the response
         $response->assertStatus(200);
-        
+
         // Check that only unpaid bills are returned
         $data = $response->json('data');
         foreach ($data as $item) {
             $this->assertEquals(0, $item['amount_paid']);
         }
-        
+
         // Make the request with status filter (partial)
         $response = $this->getJson('/api/committee/dues-report?status=partial');
-        
+
         // Assert the response
         $response->assertStatus(200);
-        
+
         // Check that only partially paid bills are returned
         $data = $response->json('data');
         foreach ($data as $item) {
             $this->assertGreaterThan(0, $item['amount_paid']);
             $this->assertLessThan($item['bill_amount'], $item['amount_paid']);
+        }
+    }
+
+    /**
+     * Test that committee members can filter the dues report by wing.
+     */
+    public function test_committee_members_can_filter_dues_report_by_wing()
+    {
+        // Create a committee user
+        $committeeUser = User::factory()->create(['role' => 'committee']);
+
+        // Act as the committee user
+        Sanctum::actingAs($committeeUser);
+
+        // Make the request with wing filter
+        $response = $this->getJson('/api/committee/dues-report?wing=A');
+
+        // Assert the response
+        $response->assertStatus(200);
+
+        // Check that only Wing A units are returned
+        $data = $response->json('data');
+        foreach ($data as $item) {
+            $this->assertEquals('Building A', $item['building_name']);
+        }
+    }
+
+    /**
+     * Test that committee members can filter the dues report by floor.
+     */
+    public function test_committee_members_can_filter_dues_report_by_floor()
+    {
+        // Create a committee user
+        $committeeUser = User::factory()->create(['role' => 'committee']);
+
+        // Act as the committee user
+        Sanctum::actingAs($committeeUser);
+
+        // Make the request with floor filter
+        $response = $this->getJson('/api/committee/dues-report?floor=1');
+
+        // Assert the response
+        $response->assertStatus(200);
+
+        // Check that only floor 1 units are returned
+        $data = $response->json('data');
+        foreach ($data as $item) {
+            $this->assertEquals('1', $item['floor']);
+        }
+    }
+
+    /**
+     * Test that committee members can filter the dues report by due amount range.
+     */
+    public function test_committee_members_can_filter_dues_report_by_due_amount_range()
+    {
+        // Create a committee user
+        $committeeUser = User::factory()->create(['role' => 'committee']);
+
+        // Act as the committee user
+        Sanctum::actingAs($committeeUser);
+
+        // Make the request with min_due and max_due filters
+        $response = $this->getJson('/api/committee/dues-report?min_due=1000&max_due=1200');
+
+        // Assert the response
+        $response->assertStatus(200);
+
+        // Check that only dues within the specified range are returned
+        $data = $response->json('data');
+        foreach ($data as $item) {
+            $this->assertGreaterThanOrEqual(1000, $item['due_amount']);
+            $this->assertLessThanOrEqual(1200, $item['due_amount']);
         }
     }
 
@@ -295,16 +368,16 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a committee user
         $committeeUser = User::factory()->create(['role' => 'committee']);
-        
+
         // Act as the committee user
         Sanctum::actingAs($committeeUser);
-        
+
         // Make the request with search filter
         $response = $this->getJson('/api/committee/dues-report?search=John');
-        
+
         // Assert the response
         $response->assertStatus(200);
-        
+
         // Check that only John Doe's bills are returned
         $data = $response->json('data');
         foreach ($data as $item) {
@@ -319,13 +392,13 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a committee user
         $committeeUser = User::factory()->create(['role' => 'committee']);
-        
+
         // Act as the committee user
         Sanctum::actingAs($committeeUser);
-        
+
         // Make the request
         $response = $this->get('/api/committee/dues-report/export');
-        
+
         // Assert the response
         $response->assertStatus(200)
                  ->assertHeader('Content-Type', 'text/csv; charset=UTF-8')
@@ -339,13 +412,79 @@ class CommitteeDuesReportControllerTest extends TestCase
     {
         // Create a regular user
         $regularUser = User::factory()->create(['role' => 'member']);
-        
+
         // Act as the regular user
         Sanctum::actingAs($regularUser);
-        
+
         // Make the request
         $response = $this->get('/api/committee/dues-report/export');
-        
+
+        // Assert the response
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Test that committee members can get chart summary data.
+     */
+    public function test_committee_members_can_get_chart_summary()
+    {
+        // Create a committee user
+        $committeeUser = User::factory()->create(['role' => 'committee']);
+
+        // Act as the committee user
+        Sanctum::actingAs($committeeUser);
+
+        // Make the request for wing chart type
+        $response = $this->getJson('/api/committee/dues-report/chart-summary?chart_type=wing');
+
+        // Assert the response
+        $response->assertStatus(200)
+                 ->assertJsonStructure([
+                     '*' => [
+                         'label',
+                         'total_due'
+                     ]
+                 ]);
+
+        // Make the request for floor chart type
+        $response = $this->getJson('/api/committee/dues-report/chart-summary?chart_type=floor');
+
+        // Assert the response
+        $response->assertStatus(200)
+                 ->assertJsonStructure([
+                     '*' => [
+                         'label',
+                         'total_due'
+                     ]
+                 ]);
+
+        // Make the request for top_members chart type
+        $response = $this->getJson('/api/committee/dues-report/chart-summary?chart_type=top_members');
+
+        // Assert the response
+        $response->assertStatus(200)
+                 ->assertJsonStructure([
+                     '*' => [
+                         'label',
+                         'total_due'
+                     ]
+                 ]);
+    }
+
+    /**
+     * Test that non-committee members cannot get chart summary data.
+     */
+    public function test_non_committee_members_cannot_get_chart_summary()
+    {
+        // Create a regular user
+        $regularUser = User::factory()->create(['role' => 'member']);
+
+        // Act as the regular user
+        Sanctum::actingAs($regularUser);
+
+        // Make the request
+        $response = $this->getJson('/api/committee/dues-report/chart-summary');
+
         // Assert the response
         $response->assertStatus(403);
     }

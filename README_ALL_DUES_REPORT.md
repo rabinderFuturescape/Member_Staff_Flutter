@@ -5,10 +5,18 @@ This feature allows Management Committee users to view all members' current dues
 ## Features
 
 - View all members' current dues (committee members only)
-- Filter by building, floor, overdue status, and due month
-- Search by member name or unit number
-- Export data as CSV
-- Pagination for large datasets
+- Advanced filtering options:
+  - Filter by building, wing, floor, overdue status, and due month
+  - Filter by due amount range using a slider
+  - Search by member name or unit number
+- Data visualization:
+  - Bar charts showing total outstanding dues by wing
+  - Bar charts showing total outstanding dues by floor
+  - Bar charts showing top members with highest dues
+  - Automatic switching between bar and pie charts based on data size
+- Auto-reload on filter changes
+- Infinite scroll pagination with filter context preservation
+- Export data as CSV with all filters applied
 
 ## Access Control
 
@@ -23,13 +31,15 @@ This feature allows Management Committee users to view all members' current dues
 
 The backend implementation includes:
 
-1. **Controller**: `CommitteeDuesReportController` with two main methods:
+1. **Controller**: `CommitteeDuesReportController` with three main methods:
    - `index()`: Returns a paginated list of dues with filtering options
    - `exportCsv()`: Exports the dues report as a CSV file
+   - `chartSummary()`: Returns aggregated data for chart visualizations
 
 2. **Routes**:
    - `GET /api/committee/dues-report`: Get the dues report with filtering options
    - `GET /api/committee/dues-report/export`: Export the dues report as CSV
+   - `GET /api/committee/dues-report/chart-summary`: Get chart data with aggregated dues information
 
 3. **Middleware**:
    - `CommitteeMiddleware`: Ensures only committee members can access the routes
@@ -48,20 +58,28 @@ The frontend implementation includes:
 
 1. **Screen**: `AllDuesReportScreen` with the following features:
    - Search bar for filtering member name/unit number
-   - Filter dropdowns for building, month, and status
-   - List view of dues with pagination
-   - Export to CSV functionality
+   - Advanced filter section with dropdowns for building, wing, floor, month, and status
+   - Due amount range slider for filtering by amount
+   - Chart visualization section with different chart types
+   - List view of dues with infinite scroll pagination
+   - Export to CSV functionality with all filters applied
+   - Auto-reload on filter changes
 
 2. **Models**:
    - `DuesReportItem`: Represents a dues report item
+   - `DuesChartItem`: Represents a chart data item
 
 3. **Services**:
-   - `ApiService`: Handles API calls to the backend
+   - `ApiService`: Handles API calls to the backend with pagination and filter support
 
 4. **Widgets**:
-   - Custom widgets for the UI components
+   - `DuesChartWidget`: Bar chart visualization for dues data
+   - `DuesPieChartWidget`: Pie chart visualization for dues data
+   - Custom filter widgets with debounce mechanisms
 
 ## API Response Format
+
+### Dues Report API Response
 
 ```json
 {
@@ -94,6 +112,25 @@ The frontend implementation includes:
 }
 ```
 
+### Chart Summary API Response
+
+```json
+[
+  {
+    "label": "Building A",
+    "total_due": 25000
+  },
+  {
+    "label": "Building B",
+    "total_due": 12000
+  },
+  {
+    "label": "Building C",
+    "total_due": 34000
+  }
+]
+```
+
 ## Testing
 
 The implementation includes comprehensive tests:
@@ -101,10 +138,14 @@ The implementation includes comprehensive tests:
 1. **Backend Tests**:
    - `CommitteeDuesReportControllerTest`: Tests the controller methods
    - Tests for authorization, filtering, and CSV export
+   - Tests for the new wing, floor, and due amount range filters
+   - Tests for the chart summary API endpoint
 
 2. **Frontend Tests**:
-   - Tests for the UI components
-   - Tests for the API service
+   - `all_dues_report_test.dart`: Tests for the UI components and interactions
+   - Tests for filter application and auto-reload functionality
+   - Tests for infinite scroll pagination with filter context preservation
+   - Tests for chart type selection and visualization
 
 ## Installation and Usage
 
@@ -114,7 +155,19 @@ The implementation includes comprehensive tests:
 
 ## Future Enhancements
 
-- Add more filtering options (e.g., by date range)
-- Add sorting options (e.g., by amount, due date)
-- Add charts and graphs for visualizing dues data
-- Add email functionality to send reminders to members with overdue dues
+- Add more advanced filtering options:
+  - Filter by date range with a date range picker
+  - Filter by payment method
+  - Filter by multiple buildings/wings simultaneously
+- Add sorting options:
+  - Sort by amount (ascending/descending)
+  - Sort by due date (ascending/descending)
+  - Sort by member name (alphabetical)
+- Enhance chart visualizations:
+  - Add trend analysis over time
+  - Add comparison charts between months
+  - Add export options for charts (PNG, PDF)
+- Add email functionality:
+  - Send reminders to members with overdue dues
+  - Schedule automated reminder emails
+  - Generate and send monthly dues reports to committee members
