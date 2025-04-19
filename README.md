@@ -59,12 +59,19 @@ Member_Staff_Flutter/
 │       │   │   ├── screens/      # UI screens for Member Staff
 │       │   │   ├── services/     # Services for Member Staff
 │       │   │   └── widgets/      # Widgets for Member Staff
-│       │   └── feature_request/  # Feature Request module
-│       │       ├── api/          # API clients for Feature Request
-│       │       ├── models/       # Data models for Feature Request
-│       │       ├── screens/      # UI screens for Feature Request
-│       │       ├── providers/    # State management for Feature Request
-│       │       └── widgets/      # Widgets for Feature Request
+│       │   ├── feature_request/  # Feature Request module
+│       │   │   ├── api/          # API clients for Feature Request
+│       │   │   ├── models/       # Data models for Feature Request
+│       │   │   ├── screens/      # UI screens for Feature Request
+│       │   │   ├── providers/    # State management for Feature Request
+│       │   │   └── widgets/      # Widgets for Feature Request
+│       │   └── chat_service/     # Chat Service module
+│       │       ├── api/          # API clients for Chat Service
+│       │       ├── models/       # Data models for Chat Service
+│       │       ├── pages/        # UI screens for Chat Service
+│       │       ├── providers/    # State management for Chat Service
+│       │       ├── utils/        # Utility functions for Chat Service
+│       │       └── widgets/      # Widgets for Chat Service
 │       └── core/                 # Core functionality
 │           ├── auth/             # Authentication
 │           ├── models/           # Core data models
@@ -93,6 +100,17 @@ Member_Staff_Flutter/
 ```
 
 ## Features
+
+### Chat Service
+- **Peer-to-Peer Messaging**: Direct messaging between users
+- **Group Chat Rooms**: Create and join group chat rooms
+- **Public Discussion Rooms**: Open chat rooms for all users
+- **Committee Chat Rooms**: Special rooms for committee members with voting capabilities
+- **Real-time Messaging**: Instant message delivery with typing indicators
+- **Voting System**: Create polls, vote on options, and view results in committee rooms
+- **Member Search**: Search and invite specific members to chat rooms
+- **Secure Authentication**: Integration with OneSSO (Keycloak) for secure access
+- **Offline Support**: Message caching for offline viewing
 
 ### Feature Request System
 - **Request New Features**: Users can request new features for the application
@@ -263,6 +281,20 @@ The application connects to a Laravel backend API that provides comprehensive fu
 - `GET /api/committee/dues-report/export` - Export dues report as CSV
 - `GET /api/committee/dues-report/chart-summary` - Get chart data for visualization
 
+#### Chat Service
+- `GET /api/chat/rooms` - List all chat rooms for the current user
+- `POST /api/chat/rooms` - Create a new chat room
+- `GET /api/chat/rooms/{id}` - Get details of a specific chat room
+- `GET /api/chat/rooms/{id}/messages` - Get messages for a chat room
+- `POST /api/chat/rooms/{id}/messages` - Send a message to a chat room
+- `POST /api/chat/rooms/{id}/join` - Join a public chat room
+- `DELETE /api/chat/rooms/{id}/leave` - Leave a chat room
+- `GET /api/chat/users/search` - Search for users to invite to a chat room
+- `POST /api/chat/rooms/{id}/polls` - Create a new poll in a committee room
+- `GET /api/chat/rooms/{id}/polls` - Get all polls for a committee room
+- `POST /api/chat/polls/{id}/vote` - Vote on a poll option
+- `PATCH /api/chat/polls/{id}/close` - Close a poll (committee members only)
+
 ### API Documentation
 Detailed API documentation is available in the following OpenAPI specification files:
 - `member_staff_booking_api_spec.yaml` - Booking API endpoints
@@ -304,6 +336,7 @@ Detailed documentation for each feature is available in the following files:
 - **Attendance Tracking**: [MODELS_DOCUMENTATION.md](MODELS_DOCUMENTATION.md)
 - **Staff Rating System**: [ADMIN_STAFF_RATING_API.md](ADMIN_STAFF_RATING_API.md)
 - **All Dues Report**: [README_ALL_DUES_REPORT.md](README_ALL_DUES_REPORT.md)
+- **Chat Service**: [README_CHAT_SERVICE.md](README_CHAT_SERVICE.md)
 - **Strapi CMS Integration**: [README_STRAPI_CMS.md](README_STRAPI_CMS.md)
 - **CMS Localization**: [lib/cms/localization/README.md](lib/cms/localization/README.md)
 - **Feature Request Module**: [lib/src/features/feature_request/README.md](lib/src/features/feature_request/README.md)
