@@ -134,10 +134,12 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     if (!_hasMoreData) return;
 
     // Set loading states
-    setState(() {
-      _isLoading = _currentPage == 1 && _duesReportItems.isEmpty;
-      _isLoadingMore = _currentPage > 1;
-    });
+    if (!_isLoadingMore) { // Don't override _isLoadingMore if it's already set
+      setState(() {
+        _isLoading = _currentPage == 1 && _duesReportItems.isEmpty;
+        _isLoadingMore = _currentPage > 1;
+      });
+    }
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -249,6 +251,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     if (_hasMoreData && !_isLoadingMore) {
       setState(() {
         _currentPage++;
+        _isLoadingMore = true; // Set loading state before API call
       });
       await _loadDuesReport();
     }
@@ -453,10 +456,16 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                         },
                         child: ListView.builder(
                           controller: _scrollController,
-                          itemCount: _duesReportItems.length + (_hasMoreData ? 1 : 0),
+                          itemCount: _duesReportItems.length + 1, // Always add 1 for loading/no more data indicator
                           itemBuilder: (context, index) {
                             if (index == _duesReportItems.length) {
-                              return _buildLoadingIndicator();
+                              if (_isLoadingMore) {
+                                return _buildLoadingIndicator(isLoading: true);
+                              } else if (!_hasMoreData) {
+                                return _buildLoadingIndicator(isLoading: false, hasMore: false);
+                              } else {
+                                return const SizedBox.shrink(); // Empty widget when not loading and has more data
+                              }
                             }
                             return _buildDuesItem(_duesReportItems[index]);
                           },
@@ -1004,11 +1013,19 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     );
   }
 
-  Widget _buildLoadingIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      alignment: Alignment.center,
-      child: const CircularProgressIndicator(),
+  Widget _buildLoadingIndicator({bool isLoading = true, bool hasMore = true}) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Center(
+        child: isLoading
+            ? CircularProgressIndicator(color: Theme.of(context).primaryColor)
+            : !hasMore
+                ? const Text(
+                    'No more records',
+                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+                  )
+                : const SizedBox.shrink(),
+      ),
     );
   }
 
