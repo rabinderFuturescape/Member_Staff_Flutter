@@ -66,5 +66,7 @@ class Kernel extends HttpKernel
         'verify.jwt' => \App\Http\Middleware\VerifyJwtToken::class,
         'verify.member.context' => \App\Http\Middleware\VerifyMemberContext::class,
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
+        'keycloak' => \App\Http\Middleware\VerifyKeycloakToken::class,
+        'committee' => \App\Http\Middleware\CommitteeRoleMiddleware::class,
     ];
 }

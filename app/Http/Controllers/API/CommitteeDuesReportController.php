@@ -19,10 +19,6 @@ class CommitteeDuesReportController extends Controller
      */
     public function index(Request $request)
     {
-        // Check if user has committee role
-        if (Gate::denies('view-committee-reports')) {
-            return response()->json(['error' => 'Unauthorized. Committee access required.'], 403);
-        }
 
         // Get query parameters for filtering
         $building = $request->input('building');
@@ -136,10 +132,6 @@ class CommitteeDuesReportController extends Controller
      */
     public function exportCsv(Request $request)
     {
-        // Check if user has committee role
-        if (Gate::denies('view-committee-reports')) {
-            return response()->json(['error' => 'Unauthorized. Committee access required.'], 403);
-        }
 
         // Get query parameters for filtering (same as index method)
         $building = $request->input('building');
@@ -299,10 +291,6 @@ class CommitteeDuesReportController extends Controller
      */
     public function chartSummary(Request $request)
     {
-        // Check if user has committee role
-        if (Gate::denies('view-committee-reports')) {
-            return response()->json(['error' => 'Unauthorized. Committee access required.'], 403);
-        }
 
         // Get query parameters for filtering
         $month = $request->input('month'); // Format: YYYY-MM

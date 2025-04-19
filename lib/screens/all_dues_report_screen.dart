@@ -15,6 +15,7 @@ import '../models/dues_report_model.dart';
 import '../models/dues_chart_model.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_service.dart';
+import '../services/onessoauth_service.dart';
 import '../widgets/custom_app_bar.dart';
 import '../widgets/custom_drawer.dart';
 import '../widgets/dues_chart_widget.dart';
@@ -34,6 +35,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
   // Debounce timer for range slider
   Timer? _debounceTimer;
   final ApiService _apiService = ApiService();
+  final OneSSOAuthService _oneSSOAuthService = OneSSOAuthService();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
@@ -65,13 +67,31 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDuesReport();
-    _loadBuildings();
-    _loadFloors();
-    _loadChartData();
+    _checkCommitteeAccess();
 
     // Add scroll listener for pagination
     _scrollController.addListener(_scrollListener);
+  }
+
+  // Check if the user has committee role before loading data
+  Future<void> _checkCommitteeAccess() async {
+    if (await _oneSSOAuthService.isCommitteeMember()) {
+      _loadDuesReport();
+      _loadBuildings();
+      _loadFloors();
+      _loadChartData();
+    } else {
+      // Show unauthorized message and navigate back
+      SnackbarHelper.showErrorSnackBar(
+        context,
+        'Unauthorized. Committee access required.'
+      );
+
+      // Navigate back after a short delay
+      Future.delayed(const Duration(seconds: 2), () {
+        Navigator.of(context).pop();
+      });
+    }
   }
 
   // Scroll listener for pagination
@@ -142,22 +162,13 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     }
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final token = authProvider.token;
-
-      if (token == null) {
-        SnackbarHelper.showErrorSnackBar(context, 'You are not logged in');
-        return;
-      }
-
       // Build query parameters with all current filters
       Map<String, dynamic> queryParams = _buildQueryParameters();
 
-      // Make API request
+      // Make API request (token will be automatically added by ApiService)
       final response = await _apiService.get(
         '/committee/dues-report',
         queryParameters: queryParams,
-        token: token,
       );
 
       if (response.statusCode == 200) {
@@ -268,14 +279,6 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     });
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final token = authProvider.token;
-
-      if (token == null) {
-        SnackbarHelper.showErrorSnackBar(context, 'You are not logged in');
-        return;
-      }
-
       // Build query parameters using the same filters as the list
       Map<String, dynamic> queryParams = _buildQueryParameters();
 
@@ -286,10 +289,10 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
       // Add chart type parameter
       queryParams['chart_type'] = _selectedChartType;
 
+      // Make API request (token will be automatically added by ApiService)
       final response = await _apiService.get(
         '/committee/dues-report/chart-summary',
         queryParameters: queryParams,
-        token: token,
       );
 
       if (response.statusCode == 200) {
@@ -316,13 +319,6 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
 
   Future<void> _exportCsv() async {
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final token = authProvider.token;
-
-      if (token == null) {
-        SnackbarHelper.showErrorSnackBar(context, 'You are not logged in');
-        return;
-      }
 
       // Request storage permission
       var status = await Permission.storage.request();
@@ -361,12 +357,11 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
       final filePath =
           '${directory!.path}/dues_report_${DateFormat('yyyyMMdd').format(DateTime.now())}.csv';
 
-      // Download the file
+      // Download the file (token will be automatically added by ApiService)
       await _apiService.download(
         '/committee/dues-report/export',
         filePath,
         queryParameters: queryParams,
-        token: token,
       );
 
       // Close the loading dialog

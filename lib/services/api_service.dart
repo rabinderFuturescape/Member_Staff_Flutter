@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 import '../utils/constants.dart';
+import 'onessoauth_service.dart';
 
 class ApiService {
   late Dio _dio;
+  final OneSSOAuthService _oneSSOAuthService = OneSSOAuthService();
 
   ApiService() {
     _dio = Dio(
@@ -26,6 +28,45 @@ class ApiService {
       responseBody: true,
       error: true,
     ));
+
+    // Add interceptor for token refresh
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            // Token expired, try to refresh it
+            if (await _oneSSOAuthService.refreshToken()) {
+              // Get the new token
+              final newToken = await _oneSSOAuthService.getAccessToken();
+
+              // Update the request header with the new token
+              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+
+              // Create a new request with the updated header
+              final opts = Options(
+                method: error.requestOptions.method,
+                headers: error.requestOptions.headers,
+              );
+
+              // Retry the request with the new token
+              final response = await _dio.request(
+                error.requestOptions.path,
+                options: opts,
+                data: error.requestOptions.data,
+                queryParameters: error.requestOptions.queryParameters,
+              );
+
+              // Return the response
+              handler.resolve(response);
+              return;
+            }
+          }
+
+          // If token refresh failed or error is not 401, continue with the error
+          handler.next(error);
+        },
+      ),
+    );
   }
 
   Future<Response> get(
@@ -34,6 +75,11 @@ class ApiService {
     String? token,
   }) async {
     try {
+      // If no token is provided, try to get it from OneSSOAuthService
+      if (token == null) {
+        token = await _oneSSOAuthService.getAccessToken();
+      }
+
       final options = Options(
         headers: {
           if (token != null) 'Authorization': 'Bearer $token',
@@ -58,6 +104,11 @@ class ApiService {
     String? token,
   }) async {
     try {
+      // If no token is provided, try to get it from OneSSOAuthService
+      if (token == null) {
+        token = await _oneSSOAuthService.getAccessToken();
+      }
+
       final options = Options(
         headers: {
           if (token != null) 'Authorization': 'Bearer $token',
@@ -83,6 +134,11 @@ class ApiService {
     String? token,
   }) async {
     try {
+      // If no token is provided, try to get it from OneSSOAuthService
+      if (token == null) {
+        token = await _oneSSOAuthService.getAccessToken();
+      }
+
       final options = Options(
         headers: {
           if (token != null) 'Authorization': 'Bearer $token',
@@ -108,6 +164,11 @@ class ApiService {
     String? token,
   }) async {
     try {
+      // If no token is provided, try to get it from OneSSOAuthService
+      if (token == null) {
+        token = await _oneSSOAuthService.getAccessToken();
+      }
+
       final options = Options(
         headers: {
           if (token != null) 'Authorization': 'Bearer $token',
@@ -134,6 +195,11 @@ class ApiService {
     Function(int, int)? onReceiveProgress,
   }) async {
     try {
+      // If no token is provided, try to get it from OneSSOAuthService
+      if (token == null) {
+        token = await _oneSSOAuthService.getAccessToken();
+      }
+
       final options = Options(
         headers: {
           if (token != null) 'Authorization': 'Bearer $token',

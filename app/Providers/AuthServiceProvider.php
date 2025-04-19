@@ -24,9 +24,6 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        // Define a gate for viewing committee reports
-        Gate::define('view-committee-reports', function ($user) {
-            return $user->role === 'committee';
-        });
+        // Gates are now handled by Keycloak middleware
     }
 }
