@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:open_file/open_file.dart';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:async';
 
 import '../models/dues_report_model.dart';
 import '../models/dues_chart_model.dart';
@@ -30,6 +31,8 @@ class AllDuesReportScreen extends StatefulWidget {
 }
 
 class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
+  // Debounce timer for range slider
+  Timer? _debounceTimer;
   final ApiService _apiService = ApiService();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
@@ -68,20 +71,26 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
     _loadChartData();
 
     // Add scroll listener for pagination
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent * 0.8 &&
-          !_isLoadingMore &&
-          _hasMoreData) {
-        _loadMoreData();
-      }
-    });
+    _scrollController.addListener(_scrollListener);
+  }
+
+  // Scroll listener for pagination
+  void _scrollListener() {
+    // Check if we've reached 80% of the scroll position
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent * 0.8 &&
+        !_isLoadingMore &&
+        _hasMoreData) {
+      _loadMoreData();
+    }
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
@@ -112,17 +121,21 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
   }
 
   Future<void> _loadDuesReport({bool refresh = false}) async {
+    // If refreshing, reset pagination state
     if (refresh) {
       setState(() {
         _currentPage = 1;
         _hasMoreData = true;
+        _duesReportItems = []; // Clear existing items immediately for better UX
       });
     }
 
+    // Don't proceed if we've reached the end of the data
     if (!_hasMoreData) return;
 
+    // Set loading states
     setState(() {
-      _isLoading = _currentPage == 1;
+      _isLoading = _currentPage == 1 && _duesReportItems.isEmpty;
       _isLoadingMore = _currentPage > 1;
     });
 
@@ -135,46 +148,10 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
         return;
       }
 
-      // Build query parameters
-      Map<String, dynamic> queryParams = {
-        'page': _currentPage,
-        'per_page': 15,
-      };
+      // Build query parameters with all current filters
+      Map<String, dynamic> queryParams = _buildQueryParameters();
 
-      if (_selectedBuilding != null && _selectedBuilding != 'All') {
-        queryParams['building'] = _selectedBuilding;
-      }
-
-      if (_selectedWing != null && _selectedWing != 'All') {
-        queryParams['wing'] = _selectedWing;
-      }
-
-      if (_selectedFloor != null && _selectedFloor != 'All') {
-        queryParams['floor'] = _selectedFloor;
-      }
-
-      if (_selectedMonth != null) {
-        queryParams['month'] =
-            DateFormat('yyyy-MM').format(_selectedMonth!);
-      }
-
-      if (_selectedStatus != null && _selectedStatus != 'All') {
-        queryParams['status'] = _selectedStatus!.toLowerCase();
-      }
-
-      if (_searchQuery.isNotEmpty) {
-        queryParams['search'] = _searchQuery;
-      }
-
-      // Add due amount range filters
-      if (_minDueAmount > 0) {
-        queryParams['min_due'] = _minDueAmount.toInt().toString();
-      }
-
-      if (_maxDueAmount < 100000) {
-        queryParams['max_due'] = _maxDueAmount.toInt().toString();
-      }
-
+      // Make API request
       final response = await _apiService.get(
         '/committee/dues-report',
         queryParameters: queryParams,
@@ -187,18 +164,22 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
         final int total = data['total'];
         final int lastPage = data['last_page'];
 
+        // Convert JSON to model objects
         List<DuesReportItem> duesItems = items
             .map((item) => DuesReportItem.fromJson(item))
             .toList();
 
         setState(() {
+          // If refreshing or first page, replace items; otherwise append
           if (refresh || _currentPage == 1) {
             _duesReportItems = duesItems;
           } else {
             _duesReportItems.addAll(duesItems);
           }
+
+          // Update pagination state
           _totalPages = lastPage;
-          _hasMoreData = _currentPage < lastPage;
+          _hasMoreData = _currentPage < lastPage && duesItems.isNotEmpty;
           _isLoading = false;
           _isLoadingMore = false;
         });
@@ -213,6 +194,55 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
       SnackbarHelper.showErrorSnackBar(
           context, 'Failed to load dues report: ${e.toString()}');
     }
+  }
+
+  // Helper method to build query parameters with all current filters
+  Map<String, dynamic> _buildQueryParameters() {
+    Map<String, dynamic> queryParams = {
+      'page': _currentPage,
+      'per_page': 15,
+    };
+
+    // Add building filter
+    if (_selectedBuilding != null && _selectedBuilding != 'All') {
+      queryParams['building'] = _selectedBuilding;
+    }
+
+    // Add wing filter
+    if (_selectedWing != null && _selectedWing != 'All') {
+      queryParams['wing'] = _selectedWing;
+    }
+
+    // Add floor filter
+    if (_selectedFloor != null && _selectedFloor != 'All') {
+      queryParams['floor'] = _selectedFloor;
+    }
+
+    // Add month filter
+    if (_selectedMonth != null) {
+      queryParams['month'] = DateFormat('yyyy-MM').format(_selectedMonth!);
+    }
+
+    // Add status filter
+    if (_selectedStatus != null && _selectedStatus != 'All') {
+      queryParams['status'] = _selectedStatus!.toLowerCase();
+    }
+
+    // Add search filter
+    if (_searchQuery.isNotEmpty) {
+      queryParams['search'] = _searchQuery;
+    }
+
+    // Add due amount range filters
+    if (_minDueAmount > 0) {
+      queryParams['min_due'] = _minDueAmount.toInt().toString();
+    }
+
+    if (_maxDueAmount < 100000) {
+      queryParams['max_due'] = _maxDueAmount.toInt().toString();
+    }
+
+    return queryParams;
   }
 
   Future<void> _loadMoreData() async {
@@ -243,15 +273,15 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
         return;
       }
 
-      // Build query parameters
-      Map<String, dynamic> queryParams = {
-        'chart_type': _selectedChartType,
-      };
+      // Build query parameters using the same filters as the list
+      Map<String, dynamic> queryParams = _buildQueryParameters();
 
-      if (_selectedMonth != null) {
-        queryParams['month'] =
-            DateFormat('yyyy-MM').format(_selectedMonth!);
-      }
+      // Remove pagination parameters
+      queryParams.remove('page');
+      queryParams.remove('per_page');
+
+      // Add chart type parameter
+      queryParams['chart_type'] = _selectedChartType;
 
       final response = await _apiService.get(
         '/committee/dues-report/chart-summary',
@@ -317,42 +347,11 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
         },
       );
 
-      // Build query parameters
-      Map<String, dynamic> queryParams = {};
-
-      if (_selectedBuilding != null && _selectedBuilding != 'All') {
-        queryParams['building'] = _selectedBuilding;
-      }
-
-      if (_selectedWing != null && _selectedWing != 'All') {
-        queryParams['wing'] = _selectedWing;
-      }
-
-      if (_selectedFloor != null && _selectedFloor != 'All') {
-        queryParams['floor'] = _selectedFloor;
-      }
-
-      if (_selectedMonth != null) {
-        queryParams['month'] =
-            DateFormat('yyyy-MM').format(_selectedMonth!);
-      }
-
-      if (_selectedStatus != null && _selectedStatus != 'All') {
-        queryParams['status'] = _selectedStatus!.toLowerCase();
-      }
-
-      if (_searchQuery.isNotEmpty) {
-        queryParams['search'] = _searchQuery;
-      }
-
-      // Add due amount range filters
-      if (_minDueAmount > 0) {
-        queryParams['min_due'] = _minDueAmount.toInt().toString();
-      }
-
-      if (_maxDueAmount < 100000) {
-        queryParams['max_due'] = _maxDueAmount.toInt().toString();
-      }
+      // Build query parameters with all current filters
+      // Remove the page parameter as we want all data for export
+      Map<String, dynamic> queryParams = _buildQueryParameters();
+      queryParams.remove('page');
+      queryParams.remove('per_page');
 
       // Get the download directory
       final directory = await getExternalStorageDirectory();
@@ -399,7 +398,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
       setState(() {
         _selectedMonth = picked;
       });
-      _refreshData();
+      _applyFilters();
     }
   }
 
@@ -416,7 +415,16 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
       _maxDueAmount = 100000;
       _dueAmountRange = const RangeValues(0, 100000);
     });
-    _refreshData();
+
+    // Reset and reload data
+    _loadDuesReport(refresh: true);
+    _loadChartData();
+  }
+
+  // Apply filters and reload data
+  void _applyFilters() {
+    _loadDuesReport(refresh: true);
+    _loadChartData();
   }
 
   @override
@@ -439,7 +447,10 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                         child: Text('No dues found'),
                       )
                     : RefreshIndicator(
-                        onRefresh: _refreshData,
+                        onRefresh: () async {
+                          await _loadDuesReport(refresh: true);
+                          await _loadChartData();
+                        },
                         child: ListView.builder(
                           controller: _scrollController,
                           itemCount: _duesReportItems.length + (_hasMoreData ? 1 : 0),
@@ -478,7 +489,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                       _searchQuery = '';
                       _searchController.clear();
                     });
-                    _refreshData();
+                    _applyFilters();
                   },
                 )
               : null,
@@ -490,7 +501,12 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
           setState(() {
             _searchQuery = value;
           });
-          _refreshData();
+          // Debounce search to avoid too many API calls
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (_searchQuery == value) {
+              _applyFilters();
+            }
+          });
         },
       ),
     );
@@ -531,7 +547,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                         setState(() {
                           _selectedBuilding = value;
                         });
-                        _refreshData();
+                        _applyFilters();
                       },
                     ),
                   ),
@@ -559,7 +575,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                         setState(() {
                           _selectedWing = value;
                         });
-                        _refreshData();
+                        _applyFilters();
                       },
                     ),
                   ),
@@ -593,7 +609,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                         setState(() {
                           _selectedFloor = value;
                         });
-                        _refreshData();
+                        _applyFilters();
                       },
                     ),
                   ),
@@ -645,7 +661,7 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                         setState(() {
                           _selectedStatus = value;
                         });
-                        _refreshData();
+                        _applyFilters();
                       },
                     ),
                   ),
@@ -695,7 +711,14 @@ class _AllDuesReportScreenState extends State<AllDuesReportScreen> {
                         _minDueAmount = values.start;
                         _maxDueAmount = values.end;
                       });
-                      _refreshData();
+
+                      // Cancel previous timer if it exists
+                      _debounceTimer?.cancel();
+
+                      // Start a new timer
+                      _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                        _applyFilters();
+                      });
                     },
                   ),
                 ],
