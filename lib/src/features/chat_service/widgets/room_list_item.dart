@@ -6,10 +6,10 @@ import '../models/chat_room.dart';
 class RoomListItem extends StatelessWidget {
   /// The room to display
   final ChatRoom room;
-  
+
   /// Callback when the room is tapped
   final VoidCallback onTap;
-  
+
   /// Constructor
   const RoomListItem({
     Key? key,
@@ -81,10 +81,10 @@ class RoomListItem extends StatelessWidget {
   /// Build the avatar for the room
   Widget _buildAvatar() {
     final roomType = room.type;
-    
+
     IconData iconData;
     Color backgroundColor;
-    
+
     switch (roomType) {
       case ChatRoomType.direct:
         iconData = Icons.person;
@@ -98,8 +98,12 @@ class RoomListItem extends StatelessWidget {
         iconData = Icons.public;
         backgroundColor = Colors.orange;
         break;
+      case ChatRoomType.committee:
+        iconData = Icons.people_alt;
+        backgroundColor = Colors.purple;
+        break;
     }
-    
+
     return CircleAvatar(
       backgroundColor: backgroundColor,
       child: Icon(

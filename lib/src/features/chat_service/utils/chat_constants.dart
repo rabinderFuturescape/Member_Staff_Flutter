@@ -9,6 +9,7 @@ class ChatConstants {
   static const String chatListRoute = '/chat';
   static const String chatRoomRoute = '/chat/room';
   static const String createRoomRoute = '/chat/create';
+  static const String createCommitteeRoomRoute = '/chat/create-committee';
 
   /// Colors
   static const Color primaryColor = Color(0xFF2196F3);

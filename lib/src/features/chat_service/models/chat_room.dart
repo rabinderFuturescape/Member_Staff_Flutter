@@ -4,45 +4,54 @@ import 'package:flutter/foundation.dart';
 enum ChatRoomType {
   /// One-to-one direct message
   direct,
-  
+
   /// Group chat with multiple participants
   group,
-  
+
   /// Public discussion room
-  public
+  public,
+
+  /// Committee discussion room
+  committee
 }
 
 /// Model representing a chat room
 class ChatRoom {
   /// Unique identifier for the room
   final String id;
-  
+
   /// Name of the room
   final String name;
-  
+
   /// Description of the room
   final String? description;
-  
+
   /// Type of the room (direct, group, public)
   final ChatRoomType type;
-  
+
   /// ID of the user who created the room
   final String createdById;
-  
+
   /// Timestamp when the room was created
   final DateTime createdAt;
-  
+
   /// Last message in the room (for preview)
   final String? lastMessageContent;
-  
+
   /// Timestamp of the last message
   final DateTime? lastMessageAt;
-  
+
   /// Number of unread messages
   final int unreadCount;
-  
+
   /// List of participant IDs
   final List<String> participantIds;
+
+  /// Topic of the room (for committee rooms)
+  final String? topic;
+
+  /// Whether this is a committee room
+  final bool isCommitteeRoom;
 
   /// Constructor
   ChatRoom({
@@ -56,6 +65,8 @@ class ChatRoom {
     this.lastMessageAt,
     this.unreadCount = 0,
     required this.participantIds,
+    this.topic,
+    this.isCommitteeRoom = false,
   });
 
   /// Create a ChatRoom from a map
@@ -76,6 +87,8 @@ class ChatRoom {
           : null,
       unreadCount: map['unread_count'] ?? 0,
       participantIds: List<String>.from(map['participant_ids'] ?? []),
+      topic: map['topic'],
+      isCommitteeRoom: map['is_committee_room'] ?? false,
     );
   }
 
@@ -85,6 +98,8 @@ class ChatRoom {
       'name': name,
       'description': description,
       'type': type.toString().split('.').last,
+      'topic': topic,
+      'is_committee_room': isCommitteeRoom,
     };
   }
 
@@ -100,6 +115,8 @@ class ChatRoom {
     DateTime? lastMessageAt,
     int? unreadCount,
     List<String>? participantIds,
+    String? topic,
+    bool? isCommitteeRoom,
   }) {
     return ChatRoom(
       id: id ?? this.id,
@@ -112,18 +129,22 @@ class ChatRoom {
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
       unreadCount: unreadCount ?? this.unreadCount,
       participantIds: participantIds ?? this.participantIds,
+      topic: topic ?? this.topic,
+      isCommitteeRoom: isCommitteeRoom ?? this.isCommitteeRoom,
     );
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is ChatRoom &&
         other.id == id &&
         other.name == name &&
         other.type == type &&
-        other.createdById == createdById;
+        other.createdById == createdById &&
+        other.isCommitteeRoom == isCommitteeRoom &&
+        other.topic == topic;
   }
 
   @override
@@ -131,6 +152,8 @@ class ChatRoom {
     return id.hashCode ^
         name.hashCode ^
         type.hashCode ^
-        createdById.hashCode;
+        createdById.hashCode ^
+        isCommitteeRoom.hashCode ^
+        (topic?.hashCode ?? 0);
   }
 }
